@@ -127,7 +127,7 @@ jobs:
           mkdir -p dist/binaries
           ls -R dist/
           # Find and extract amd64 archive
-          ARCHIVE=$(find dist -name "firecracker-shim_*_linux_amd64.tar.gz" | head -n 1)
+          ARCHIVE=$(find dist -name "firecracker-shim-*-linux-amd64.tar.gz" | head -n 1)
           if [ -z "$ARCHIVE" ]; then
             echo "Error: Could not find amd64 archive in dist/"
             exit 1
@@ -197,7 +197,7 @@ jobs:
 
           ls -R dist/
           # Find and extract amd64 archive
-          ARCHIVE=$(find dist -name "firecracker-shim_*_linux_amd64.tar.gz" | head -n 1)
+          ARCHIVE=$(find dist -name "firecracker-shim-*-linux-amd64.tar.gz" | head -n 1)
           if [ -z "$ARCHIVE" ]; then
             echo "Error: Could not find amd64 archive in dist/"
             exit 1
