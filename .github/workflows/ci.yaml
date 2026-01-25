@@ -125,8 +125,15 @@ jobs:
       - name: Extract binaries
         run: |
           mkdir -p dist/binaries
-          # Extract amd64 binaries from goreleaser output
-          tar xf dist/firecracker-shim_*_linux_amd64.tar.gz -C dist/binaries
+          ls -R dist/
+          # Find and extract amd64 archive
+          ARCHIVE=$(find dist -name "firecracker-shim_*_linux_amd64.tar.gz" | head -n 1)
+          if [ -z "$ARCHIVE" ]; then
+            echo "Error: Could not find amd64 archive in dist/"
+            exit 1
+          fi
+          echo "Extracting $ARCHIVE"
+          tar xf "$ARCHIVE" -C dist/binaries
 
       - name: Check KVM
         run: |
@@ -188,8 +195,15 @@ jobs:
           mkdir -p build_context/config
           mkdir -p build_context/assets
 
-          # Extract linux-amd64 archive from goreleaser
-          tar xf dist/firecracker-shim_*_linux_amd64.tar.gz -C build_context/binaries/
+          ls -R dist/
+          # Find and extract amd64 archive
+          ARCHIVE=$(find dist -name "firecracker-shim_*_linux_amd64.tar.gz" | head -n 1)
+          if [ -z "$ARCHIVE" ]; then
+            echo "Error: Could not find amd64 archive in dist/"
+            exit 1
+          fi
+          echo "Extracting $ARCHIVE"
+          tar xf "$ARCHIVE" -C build_context/binaries/
 
           # Move binaries to correct place if tarball structure differs (goreleaser flattens by default)
           # We need to make sure binaries are at build_context/binaries root for install.sh
