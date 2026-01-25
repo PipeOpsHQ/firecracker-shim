@@ -176,7 +176,7 @@ func (sm *SnapshotManager) CreateGoldenSnapshot(ctx context.Context) (*Snapshot,
 	// Create the snapshot
 	snap, err := sm.CreateSnapshot(ctx, sandbox, sm.config.GoldenSnapshotName, true)
 	if err != nil {
-		sm.vmManager.DestroyVM(ctx, sandbox)
+		_ = sm.vmManager.DestroyVM(ctx, sandbox)
 		return nil, fmt.Errorf("failed to create golden snapshot: %w", err)
 	}
 
@@ -552,11 +552,6 @@ func (sm *SnapshotManager) createSnapshotViaAPI(ctx context.Context, machine *fi
 	return nil
 }
 
-=======
-// =============================================================================
-// =============================================================================
-// Snapshot-Aware Pool Integration
-// =============================================================================
 
 // SnapshotPool wraps VMPool with snapshot restore capability.
 // When a golden snapshot is available, it restores from snapshot instead

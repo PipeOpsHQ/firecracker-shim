@@ -446,7 +446,7 @@ func (f *FsifyConverter) calculateSize(dir string) (int64, error) {
 	if err != nil {
 		// Fallback to manual calculation
 		var size int64
-		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err == nil && !info.IsDir() {
 				size += info.Size()
 			}

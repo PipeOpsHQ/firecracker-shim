@@ -97,6 +97,7 @@ func TestCachePersistence(t *testing.T) {
 	tmpDir := t.TempDir()
 	config := DefaultFsifyConfig()
 	config.OutputDir = tmpDir
+	config.TempDir = filepath.Join(tmpDir, "temp")
 
 	log := logrus.NewEntry(logrus.New())
 	f, err := NewFsifyConverter(config, log)
