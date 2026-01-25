@@ -456,7 +456,7 @@ func (f *FsifyConverter) calculateSize(dir string) (int64, error) {
 	}
 
 	var sizeMB int64
-	fmt.Sscanf(string(output), "%d", &sizeMB)
+	_, _ = fmt.Sscanf(string(output), "%d", &sizeMB)
 	return sizeMB, nil
 }
 

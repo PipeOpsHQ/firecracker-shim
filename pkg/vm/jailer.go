@@ -343,7 +343,7 @@ func (jm *JailerManager) StartJailedVM(ctx context.Context, jailedVM *JailedVM, 
 	pidFile := filepath.Join(jailedVM.ChrootDir, "..", "firecracker.pid")
 	if data, err := os.ReadFile(pidFile); err == nil {
 		var pid int
-		fmt.Sscanf(string(data), "%d", &pid)
+		_, _ = fmt.Sscanf(string(data), "%d", &pid)
 		jailedVM.PID = pid
 	}
 
