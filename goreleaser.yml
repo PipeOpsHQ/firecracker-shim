@@ -72,9 +72,6 @@ changelog:
       - "^test:"
 
 release:
-  github:
-    owner: PipeOpsHQ
-    name: firecracker-shim
   extra_files:
     - glob: deploy/installer/daemonset.yaml
 

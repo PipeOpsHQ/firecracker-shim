@@ -81,6 +81,11 @@ jobs:
       - name: Debug - List Files
         run: ls -la
 
+      - name: Update Installer Manifest Version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          sed -i "s|:latest|:${{ github.ref_name }}|g" deploy/installer/daemonset.yaml
+
       - name: Run GoReleaser (Release)
         uses: goreleaser/goreleaser-action@v5
         if: startsWith(github.ref, 'refs/tags/')
