@@ -123,7 +123,7 @@ func TestManager_DestroyVM_Cleanup(t *testing.T) {
 
 	// Call DestroyVM
 	ctx := context.Background()
-	err := mgr.DestroyVM(ctx, sb)
+	err = mgr.DestroyVM(ctx, sb)
 	if err != nil {
 		t.Errorf("DestroyVM failed: %v", err)
 	}
