@@ -1,0 +1,48 @@
+site_name: firecracker-shim
+site_description: Kubernetes-native Firecracker runtime
+site_url: https://pipeops.github.io/firecracker-cri/
+repo_url: https://github.com/pipeops/firecracker-cri
+repo_name: pipeops/firecracker-cri
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Operations Guide: operations.md
+  - Architecture: ARCHITECTURE.md
+  - Launch Post: launch-post.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search

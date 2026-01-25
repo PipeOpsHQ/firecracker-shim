@@ -1,0 +1,292 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+
+env:
+  GO_VERSION: '1.22'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=5m
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          flags: unittests
+        continue-on-error: true
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build binaries
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          mkdir -p dist/${{ matrix.goos }}-${{ matrix.goarch }}
+
+          # Build shim
+          go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
+            -o dist/${{ matrix.goos }}-${{ matrix.goarch }}/containerd-shim-fc-v2 \
+            ./cmd/containerd-shim-fc-v2
+
+          # Build agent (static)
+          go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
+            -o dist/${{ matrix.goos }}-${{ matrix.goarch }}/fc-agent \
+            ./cmd/fc-agent
+
+          # Build fcctl
+          go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
+            -o dist/${{ matrix.goos }}-${{ matrix.goarch }}/fcctl \
+            ./cmd/fcctl
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
+          retention-days: 7
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-linux-amd64
+          path: dist/
+
+      - name: Check KVM
+        run: |
+          if [ -e /dev/kvm ]; then
+            echo "KVM is available"
+            ls -la /dev/kvm
+          else
+            echo "KVM not available - skipping integration tests"
+            exit 0
+          fi
+
+      - name: Install Firecracker
+        run: |
+          FIRECRACKER_VERSION="v1.6.0"
+          curl -sL "https://github.com/firecracker-microvm/firecracker/releases/download/${FIRECRACKER_VERSION}/firecracker-${FIRECRACKER_VERSION}-x86_64.tgz" | tar xz
+          sudo mv release-*/firecracker-* /usr/local/bin/firecracker
+          sudo mv release-*/jailer-* /usr/local/bin/jailer
+          rm -rf release-*
+          firecracker --version
+
+      - name: Install containerd
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y containerd
+          sudo systemctl start containerd
+
+      - name: Setup binaries
+        run: |
+          chmod +x dist/linux-amd64/*
+          sudo cp dist/linux-amd64/* /usr/local/bin/
+
+      - name: Run integration tests
+        run: |
+          sudo chmod +x scripts/integration-test.sh
+          sudo ./scripts/integration-test.sh -v || true
+        continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Run gosec
+        uses: securego/gosec@master
+        with:
+          args: '-no-fail -fmt sarif -out results.sarif ./...'
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+        continue-on-error: true
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+
+          # Package amd64
+          cd dist/binaries-linux-amd64/linux-amd64
+          tar czf ../../../release/firecracker-shim-${{ github.ref_name }}-linux-amd64.tar.gz *
+          cd ../../..
+
+          # Package arm64
+          cd dist/binaries-linux-arm64/linux-arm64
+          tar czf ../../../release/firecracker-shim-${{ github.ref_name }}-linux-arm64.tar.gz *
+          cd ../../..
+
+          # Generate checksums
+          cd release
+          sha256sum *.tar.gz > checksums.txt
+          cat checksums.txt
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## What's Changed" > CHANGELOG.md
+          git log --pretty=format:"* %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> CHANGELOG.md || true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: CHANGELOG.md
+          files: |
+            release/*
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+
+  publish-image:
+    name: Publish Container Image
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries-linux-amd64
+          path: dist/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Create Dockerfile
+        run: |
+          cat > Dockerfile <<'EOF'
+          FROM scratch
+          COPY dist/linux-amd64/containerd-shim-fc-v2 /containerd-shim-fc-v2
+          COPY dist/linux-amd64/fc-agent /fc-agent
+          COPY dist/linux-amd64/fcctl /fcctl
+          ENTRYPOINT ["/containerd-shim-fc-v2"]
+          EOF
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

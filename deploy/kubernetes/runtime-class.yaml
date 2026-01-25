@@ -1,0 +1,47 @@
+# Kubernetes RuntimeClass for Firecracker
+#
+# This enables workloads to run in Firecracker microVMs instead of
+# regular containers. Apply this to your cluster:
+#   kubectl apply -f runtime-class.yaml
+#
+# Then use it in your pods:
+#   spec:
+#     runtimeClassName: firecracker
+
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: firecracker
+  labels:
+    app.kubernetes.io/name: fc-cri
+    app.kubernetes.io/component: runtime
+# The handler must match the runtime name in containerd config
+handler: firecracker
+# Overhead accounts for VM memory/CPU that's not available to the container
+overhead:
+  podFixed:
+    # Base memory for VM kernel + agent (~64MB)
+    memory: "64Mi"
+    # Base CPU for VMM process (~100m)
+    cpu: "100m"
+# Optional: Node selector to ensure pods only run on fc-cri enabled nodes
+scheduling:
+  nodeSelector:
+    fc-cri.io/enabled: "true"
+---
+# Alternative RuntimeClass with larger overhead for memory-intensive workloads
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: firecracker-large
+  labels:
+    app.kubernetes.io/name: fc-cri
+    app.kubernetes.io/component: runtime
+handler: firecracker
+overhead:
+  podFixed:
+    memory: "128Mi"
+    cpu: "200m"
+scheduling:
+  nodeSelector:
+    fc-cri.io/enabled: "true"

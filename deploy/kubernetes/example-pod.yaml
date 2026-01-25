@@ -1,0 +1,90 @@
+# Example Pod using Firecracker runtime
+#
+# This pod runs in a Firecracker microVM instead of a regular container,
+# providing stronger isolation through VM-level boundaries.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-workload
+  labels:
+    app: secure-workload
+    runtime: firecracker
+spec:
+  # Use the Firecracker runtime
+  runtimeClassName: firecracker
+
+  containers:
+  - name: app
+    image: nginx:alpine
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    # Note: The overhead from RuntimeClass is added on top of these limits
+
+---
+# Example: Multi-tenant workload with strict isolation
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tenant-workload
+  namespace: tenant-a
+  labels:
+    app: tenant-app
+    tenant: a
+spec:
+  runtimeClassName: firecracker
+
+  # Security context still applies within the VM
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  containers:
+  - name: untrusted-code
+    image: tenant-a/their-app:latest
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "1000m"
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+
+---
+# Example: Batch job with isolated execution
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: secure-batch-job
+spec:
+  template:
+    spec:
+      runtimeClassName: firecracker
+      restartPolicy: Never
+
+      containers:
+      - name: processor
+        image: python:3.11-slim
+        command: ["python", "-c", "print('Running in isolated VM!')"]
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+          limits:
+            memory: "256Mi"
+            cpu: "1000m"
+  backoffLimit: 2

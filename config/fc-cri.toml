@@ -1,0 +1,134 @@
+# fc-cri Configuration
+# Location: /etc/fc-cri/config.toml
+
+[vm]
+# Number of vCPUs per VM (1 is sufficient for most workloads)
+vcpu_count = 1
+
+# Memory in MB (128MB is the minimum, increase for memory-heavy workloads)
+memory_mb = 128
+
+# Path to the uncompressed Linux kernel (vmlinux)
+kernel_path = "/var/lib/fc-cri/vmlinux"
+
+# Kernel boot arguments
+# - console=ttyS0: Serial console for debugging
+# - reboot=k: Reboot via keyboard controller
+# - panic=1: Reboot 1 second after panic
+# - pci=off: Disable PCI (not needed for virtio-mmio)
+# - quiet: Reduce boot noise
+kernel_args = "console=ttyS0 reboot=k panic=1 pci=off quiet"
+
+# Enable symmetric multi-threading (SMT)
+smt_enabled = false
+
+[pool]
+# Enable VM pre-warming pool
+enabled = true
+
+# Number of VMs to keep ready in the pool
+size = 5
+
+# Minimum number of VMs to maintain
+min_size = 2
+
+# Maximum time a VM can be idle in the pool before being destroyed
+max_idle_time = "5m"
+
+# How many VMs can be created simultaneously
+warm_concurrency = 2
+
+# How often to check and replenish the pool
+replenish_interval = "10s"
+
+[snapshots]
+# Enable VM snapshots for fast startup
+enabled = false
+
+# Directory to store snapshot files
+cache_dir = "/var/lib/fc-cri/snapshots"
+
+# Maximum number of snapshots to cache
+max_cached = 10
+
+[network]
+# Directory containing CNI plugin binaries
+cni_bin_dir = "/opt/cni/bin"
+
+# Directory containing CNI network configuration
+cni_conf_dir = "/etc/cni/net.d"
+
+# CNI cache directory
+cni_cache_dir = "/var/lib/cni"
+
+# Network name to use (leave empty to use first available)
+network_name = ""
+
+# Default subnet if no CNI config exists
+default_subnet = "10.88.0.0/16"
+
+[agent]
+# Vsock port the guest agent listens on
+vsock_port = 1024
+
+# Timeout for agent operations
+timeout = "30s"
+
+# Path to the agent binary inside the VM
+agent_path = "/usr/local/bin/fc-agent"
+
+[storage]
+# Directory for image storage
+image_dir = "/var/lib/fc-cri/images"
+
+# Directory for rootfs images
+rootfs_dir = "/var/lib/fc-cri/rootfs"
+
+# Default rootfs size in MB
+default_rootfs_size_mb = 1024
+
+# Use sparse files for rootfs images
+use_sparse_files = true
+
+# Storage backend: "file" or "devmapper"
+backend = "file"
+
+[storage.devmapper]
+# Devmapper thin pool name (only used if backend = "devmapper")
+pool_name = "fc-thin-pool"
+
+# Metadata directory
+metadata_dir = "/var/lib/fc-cri/devmapper"
+
+[jailer]
+# Enable jailer for additional security isolation
+enabled = false
+
+# User ID to run Firecracker as
+uid = 1000
+
+# Group ID
+gid = 1000
+
+# Base directory for chroot environments
+chroot_base_dir = "/srv/jailer"
+
+[logging]
+# Log level: debug, info, warn, error
+level = "info"
+
+# Log format: text or json
+format = "text"
+
+# Log file (empty for stdout)
+file = ""
+
+[metrics]
+# Enable Prometheus metrics
+enabled = true
+
+# Metrics endpoint address
+address = ":9090"
+
+# Metrics path
+path = "/metrics"

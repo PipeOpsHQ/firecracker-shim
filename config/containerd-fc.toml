@@ -1,0 +1,47 @@
+# Containerd configuration for Firecracker runtime
+# Location: /etc/containerd/config.d/firecracker.toml
+#
+# This file configures containerd to use the fc-cri shim for the "firecracker"
+# runtime. When a Kubernetes pod specifies runtimeClassName: firecracker,
+# containerd will launch the containerd-shim-fc-v2 binary.
+
+# Register the firecracker runtime
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.firecracker]
+  # The runtime type must match the shim binary naming convention:
+  # io.containerd.{name}.v2 -> containerd-shim-{name}-v2
+  runtime_type = "io.containerd.firecracker.v2"
+
+  # Sandboxer is "shim" for our implementation
+  sandboxer = "shim"
+
+  # Don't use the default container runtime
+  privileged_without_host_devices = true
+
+  # Pod annotations to pass to the shim
+  pod_annotations = ["io.kubernetes.cri.pod-annotations.*"]
+
+  # Container annotations to pass to the shim
+  container_annotations = ["io.kubernetes.cri.container-annotations.*"]
+
+# Runtime-specific options
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.firecracker.options]
+  # Path to fc-cri configuration file
+  ConfigPath = "/etc/fc-cri/config.toml"
+
+  # Binary path (optional, shim auto-discovers by convention)
+  # BinaryName = "/usr/local/bin/containerd-shim-fc-v2"
+
+# Configure the snapshotter for Firecracker
+# Firecracker requires block devices, not overlayfs
+# We use devmapper for efficiency, but native snapshotter works too
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.firecracker.options.snapshotter]
+  # Use native snapshotter - fc-cri handles the conversion internally
+  name = "native"
+
+# Alternative: Use devmapper snapshotter for better performance
+# Uncomment below and comment out the native section above
+# [plugins."io.containerd.snapshotter.v1.devmapper"]
+#   root_path = "/var/lib/containerd/io.containerd.snapshotter.v1.devmapper"
+#   pool_name = "containerd-thin-pool"
+#   base_image_size = "10GB"
+#   async_remove = true
