@@ -219,6 +219,12 @@ jobs:
           sha256sum *.tar.gz > checksums.txt
           cat checksums.txt
 
+      - name: Prepare Installer Manifest
+        run: |
+          cp deploy/installer/daemonset.yaml release/firecracker-shim-installer.yaml
+          # Replace 'latest' with version tag
+          sed -i "s|:latest|:${{ github.ref_name }}|g" release/firecracker-shim-installer.yaml
+
       - name: Generate changelog
         id: changelog
         run: |
