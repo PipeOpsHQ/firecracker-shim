@@ -29,8 +29,8 @@ theme:
 
 nav:
   - Home: index.md
+  - Installation: installation.md
   - Operations Guide: operations.md
-  - Existing Clusters: existing-clusters.md
   - Architecture: ARCHITECTURE.md
   - Launch Post: launch-post.md
 
