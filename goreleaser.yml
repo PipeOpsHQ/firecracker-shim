@@ -1,0 +1,83 @@
+version: 2
+
+project_name: firecracker-shim
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: shim
+    binary: containerd-shim-fc-v2
+    main: ./cmd/containerd-shim-fc-v2
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+  - id: agent
+    binary: fc-agent
+    main: ./cmd/fc-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+  - id: ctl
+    binary: fcctl
+    main: ./cmd/fcctl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: runtime
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    builds:
+      - shim
+      - agent
+      - ctl
+    files:
+      - config/*.toml
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+release:
+  github:
+    owner: PipeOpsHQ
+    name: firecracker-shim
+  extra_files:
+    - glob: deploy/installer/daemonset.yaml
+
+# Note: We are keeping the Docker installer build in GitHub Actions
+# because it requires downloading external non-Go assets (kernel, firecracker binary)
+# which is complex to orchestrate inside a pure goreleaser config without custom scripts.
