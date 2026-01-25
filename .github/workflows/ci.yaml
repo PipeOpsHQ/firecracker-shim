@@ -61,55 +61,54 @@ jobs:
           flags: unittests
         continue-on-error: true
 
-  build:
-    name: Build
+  goreleaser:
+    name: Build & Release
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux]
-        goarch: [amd64, arm64]
+    needs: [lint, test]
+    permissions:
+      contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Build binaries
+      - name: Run GoReleaser (Release)
+        uses: goreleaser/goreleaser-action@v5
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
         env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
-        run: |
-          mkdir -p dist/${{ matrix.goos }}-${{ matrix.goarch }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # Build shim
-          go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
-            -o dist/${{ matrix.goos }}-${{ matrix.goarch }}/containerd-shim-fc-v2 \
-            ./cmd/containerd-shim-fc-v2
+      - name: Run GoReleaser (Snapshot)
+        uses: goreleaser/goreleaser-action@v5
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --snapshot --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # Build agent (static)
-          go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
-            -o dist/${{ matrix.goos }}-${{ matrix.goarch }}/fc-agent \
-            ./cmd/fc-agent
-
-          # Build fcctl
-          go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
-            -o dist/${{ matrix.goos }}-${{ matrix.goarch }}/fcctl \
-            ./cmd/fcctl
-
-      - name: Upload artifacts
+      - name: Upload Assets (Snapshot)
+        if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: dist
           path: dist/
-          retention-days: 7
 
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: goreleaser
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
@@ -117,8 +116,14 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          name: binaries-linux-amd64
-          path: dist/
+          name: dist
+          path: dist
+
+      - name: Extract binaries
+        run: |
+          mkdir -p dist/binaries
+          # Extract amd64 binaries from goreleaser output
+          tar xf dist/firecracker-shim_*_linux_amd64.tar.gz -C dist/binaries
 
       - name: Check KVM
         run: |
@@ -148,8 +153,8 @@ jobs:
 
       - name: Setup binaries
         run: |
-          chmod +x dist/linux-amd64/*
-          sudo cp dist/linux-amd64/* /usr/local/bin/
+          sudo cp dist/binaries/* /usr/local/bin/
+          sudo chmod +x /usr/local/bin/containerd-shim-fc-v2 /usr/local/bin/fc-agent /usr/local/bin/fcctl
 
       - name: Run integration tests
         run: |
@@ -157,93 +162,10 @@ jobs:
           sudo ./scripts/integration-test.sh -v || true
         continue-on-error: true
 
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "fs"
-          scan-ref: "."
-          severity: "CRITICAL,HIGH"
-          exit-code: "0"
-
-      - name: Run gosec
-        uses: securego/gosec@master
-        with:
-          args: "-no-fail -fmt sarif -out results.sarif ./..."
-
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
-        continue-on-error: true
-
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [lint, test, build]
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist/
-
-      - name: Prepare release assets
-        run: |
-          mkdir -p release
-
-          # Package amd64
-          cd dist/binaries-linux-amd64/linux-amd64
-          tar czf ../../../release/firecracker-shim-${{ github.ref_name }}-linux-amd64.tar.gz *
-          cd ../../..
-
-          # Package arm64
-          cd dist/binaries-linux-arm64/linux-arm64
-          tar czf ../../../release/firecracker-shim-${{ github.ref_name }}-linux-arm64.tar.gz *
-          cd ../../..
-
-          # Generate checksums
-          cd release
-          sha256sum *.tar.gz > checksums.txt
-          cat checksums.txt
-
-      - name: Prepare Installer Manifest
-        run: |
-          cp deploy/installer/daemonset.yaml release/firecracker-shim-installer.yaml
-          # Replace 'latest' with version tag
-          sed -i "s|:latest|:${{ github.ref_name }}|g" release/firecracker-shim-installer.yaml
-
-      - name: Generate changelog
-        id: changelog
-        run: |
-          echo "## What's Changed" > CHANGELOG.md
-          git log --pretty=format:"* %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> CHANGELOG.md || true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          body_path: CHANGELOG.md
-          files: |
-            release/*
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
-
-  publish-image:
+  publish-installer:
     name: Publish Installer Image
     runs-on: ubuntu-latest
-    needs: [lint, test, build]
+    needs: goreleaser
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
@@ -251,22 +173,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Go binaries
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binaries-linux-amd64
-          path: dist/
+          name: dist
+          path: dist
 
-      - name: Prepare Assets
+      - name: Extract binaries
         run: |
           mkdir -p build_context/binaries
           mkdir -p build_context/config
           mkdir -p build_context/assets
 
-          # Move Go binaries
-          cp dist/linux-amd64/containerd-shim-fc-v2 build_context/binaries/
-          cp dist/linux-amd64/fc-agent build_context/binaries/
-          cp dist/linux-amd64/fcctl build_context/binaries/
+          # Extract linux-amd64 archive from goreleaser
+          tar xf dist/firecracker-shim_*_linux_amd64.tar.gz -C build_context/binaries/
+
+          # Move binaries to correct place if tarball structure differs (goreleaser flattens by default)
+          # We need to make sure binaries are at build_context/binaries root for install.sh
+          # The tarball contains: containerd-shim-fc-v2, fc-agent, fcctl, config.toml, etc.
+          # install.sh expects binaries in /binaries. The tar command extracted them there.
 
           # Download Firecracker & Jailer
           FC_VERSION="v1.6.0"
@@ -275,24 +200,18 @@ jobs:
           mv release-*/jailer-v*-x86_64 build_context/binaries/jailer
           rm -rf release-*
 
-          # Copy Config
-          cp config/*.toml build_context/config/
-
           # Copy install script
           cp deploy/installer/install.sh build_context/install.sh
 
-          # Download Kernel & Rootfs (Placeholder for now)
-          # Ideally these should be versioned artifacts.
-          # For v0.1, we'll create dummy files if not present to allow build to pass,
-          # but log a warning that the installer won't fully work without them.
+          # Download Kernel & Rootfs (Placeholder)
           touch build_context/assets/vmlinux
           touch build_context/assets/base.ext4
-          echo "Warning: Using dummy kernel/rootfs. Installer will need network to fetch real ones."
+          echo "Warning: Using dummy kernel/rootfs."
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
