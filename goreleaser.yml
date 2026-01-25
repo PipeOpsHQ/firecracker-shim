@@ -73,10 +73,7 @@ changelog:
 
 release:
   extra_files:
-    - glob: deploy/installer/daemonset.yaml
-
-git:
-  ignore_dirty: true
+    - glob: release/firecracker-shim-installer.yaml
 
 # Note: We are keeping the Docker installer build in GitHub Actions
 # because it requires downloading external non-Go assets (kernel, firecracker binary)

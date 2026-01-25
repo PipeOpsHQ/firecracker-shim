@@ -93,16 +93,20 @@ jobs:
           git config user.email "actions@github.com"
           git tag -a "$VERSION" -m "Auto-release $VERSION"
 
-          # Update manifest
-          sed -i "s|:latest|:$VERSION|g" deploy/installer/daemonset.yaml
+          # Create release manifest
+          mkdir -p release
+          cp deploy/installer/daemonset.yaml release/firecracker-shim-installer.yaml
+          sed -i "s|:latest|:$VERSION|g" release/firecracker-shim-installer.yaml
 
           # Force push tag (optional, fails if token permissions are low, but we need it locally for goreleaser)
           # We don't push because it might trigger loops. Goreleaser uses local tag.
 
-      - name: Update Installer Manifest Version (Tagged)
+      - name: Create Installer Manifest (Tagged)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          sed -i "s|:latest|:${{ github.ref_name }}|g" deploy/installer/daemonset.yaml
+          mkdir -p release
+          cp deploy/installer/daemonset.yaml release/firecracker-shim-installer.yaml
+          sed -i "s|:latest|:${{ github.ref_name }}|g" release/firecracker-shim-installer.yaml
 
       - name: Run GoReleaser (Release)
         uses: goreleaser/goreleaser-action@v5
