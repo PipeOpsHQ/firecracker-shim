@@ -23,6 +23,10 @@ type Manager struct {
 	log        *logrus.Entry
 	sandboxes  map[string]*domain.Sandbox
 	cidCounter uint32 // For generating unique vsock CIDs
+
+	// Locks for individual sandboxes to prevent concurrent state changes
+	sandboxMu    sync.Mutex
+	sandboxLocks map[string]*sync.Mutex
 }
 
 // ManagerConfig holds configuration for the VM manager.
@@ -66,11 +70,22 @@ func NewManager(config ManagerConfig, log *logrus.Entry) (*Manager, error) {
 	}
 
 	return &Manager{
-		config:     config,
-		log:        log.WithField("component", "vm-manager"),
-		sandboxes:  make(map[string]*domain.Sandbox),
-		cidCounter: 3, // CIDs start at 3 (0=hypervisor, 1=reserved, 2=host)
+		config:       config,
+		log:          log.WithField("component", "vm-manager"),
+		sandboxes:    make(map[string]*domain.Sandbox),
+		cidCounter:   3, // CIDs start at 3 (0=hypervisor, 1=reserved, 2=host)
+		sandboxLocks: make(map[string]*sync.Mutex),
 	}, nil
+}
+
+// getSandboxLock gets a mutex for a specific sandbox ID.
+func (m *Manager) getSandboxLock(id string) *sync.Mutex {
+	m.sandboxMu.Lock()
+	defer m.sandboxMu.Unlock()
+	if _, ok := m.sandboxLocks[id]; !ok {
+		m.sandboxLocks[id] = &sync.Mutex{}
+	}
+	return m.sandboxLocks[id]
 }
 
 // CreateVM creates and starts a new Firecracker microVM.
@@ -175,6 +190,14 @@ func (m *Manager) CreateVM(ctx context.Context, config domain.VMConfig) (*domain
 
 // StopVM gracefully stops a VM.
 func (m *Manager) StopVM(ctx context.Context, sandbox *domain.Sandbox) error {
+	mu := m.getSandboxLock(sandbox.ID)
+	mu.Lock()
+	defer mu.Unlock()
+
+	return m.stopVM(ctx, sandbox)
+}
+
+func (m *Manager) stopVM(ctx context.Context, sandbox *domain.Sandbox) error {
 	m.log.WithField("sandbox_id", sandbox.ID).Info("Stopping VM")
 
 	if sandbox.VM == nil {
@@ -203,11 +226,15 @@ func (m *Manager) StopVM(ctx context.Context, sandbox *domain.Sandbox) error {
 
 // DestroyVM forcefully terminates a VM and cleans up resources.
 func (m *Manager) DestroyVM(ctx context.Context, sandbox *domain.Sandbox) error {
+	mu := m.getSandboxLock(sandbox.ID)
+	mu.Lock()
+	defer mu.Unlock()
+
 	m.log.WithField("sandbox_id", sandbox.ID).Info("Destroying VM")
 
 	// Stop the VM if running
 	if sandbox.State == domain.SandboxReady {
-		if err := m.StopVM(ctx, sandbox); err != nil {
+		if err := m.stopVM(ctx, sandbox); err != nil {
 			m.log.WithError(err).Warn("Error stopping VM during destroy")
 		}
 	}
@@ -228,11 +255,20 @@ func (m *Manager) DestroyVM(ctx context.Context, sandbox *domain.Sandbox) error 
 	delete(m.sandboxes, sandbox.ID)
 	m.mu.Unlock()
 
+	// Cleanup lock
+	m.sandboxMu.Lock()
+	delete(m.sandboxLocks, sandbox.ID)
+	m.sandboxMu.Unlock()
+
 	return nil
 }
 
 // PauseVM suspends VM execution.
 func (m *Manager) PauseVM(ctx context.Context, sandbox *domain.Sandbox) error {
+	mu := m.getSandboxLock(sandbox.ID)
+	mu.Lock()
+	defer mu.Unlock()
+
 	if sandbox.VM == nil {
 		return fmt.Errorf("sandbox %s has no VM", sandbox.ID)
 	}
@@ -241,6 +277,10 @@ func (m *Manager) PauseVM(ctx context.Context, sandbox *domain.Sandbox) error {
 
 // ResumeVM resumes a paused VM.
 func (m *Manager) ResumeVM(ctx context.Context, sandbox *domain.Sandbox) error {
+	mu := m.getSandboxLock(sandbox.ID)
+	mu.Lock()
+	defer mu.Unlock()
+
 	if sandbox.VM == nil {
 		return fmt.Errorf("sandbox %s has no VM", sandbox.ID)
 	}
