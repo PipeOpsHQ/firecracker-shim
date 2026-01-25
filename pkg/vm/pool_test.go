@@ -68,11 +68,11 @@ func TestNewPool(t *testing.T) {
 }
 
 func TestPool_Acquire(t *testing.T) {
-	log := logrus.NewEntry(logrus.New())
-	config := DefaultPoolConfig()
-	config.ReplenishInterval = 10 * time.Minute // Disable auto-replenish for this test
+	// log := logrus.NewEntry(logrus.New())
+	// config := DefaultPoolConfig()
+	// config.ReplenishInterval = 10 * time.Minute // Disable auto-replenish for this test
 
-	mockMgr := &MockManager{}
+	// mockMgr := &MockManager{}
 	// Convert MockManager to real Manager via a struct literal since Manager isn't an interface in Pool
 	// Note: In a real refactor, Pool should accept an interface. For now, we'll patch the manager.
 	// Since Pool struct uses *Manager (concrete type), we can't easily swap it without refactoring.

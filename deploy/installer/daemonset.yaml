@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: firecracker-shim-installer
+  namespace: kube-system
+  labels:
+    app: firecracker-shim-installer
+spec:
+  selector:
+    matchLabels:
+      app: firecracker-shim-installer
+  template:
+    metadata:
+      labels:
+        app: firecracker-shim-installer
+    spec:
+      hostPID: true  # Required for nsenter
+      hostNetwork: true
+      containers:
+      - name: installer
+        image: ghcr.io/pipeopshq/firecracker-shim-installer:latest
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true  # Required for host filesystem access
+        env:
+        - name: RESTART_CONTAINERD
+          value: "true"
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+        # Mount host's systemd/dbus for systemctl access if needed
+        # (nsenter usually handles this via PID 1)
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /

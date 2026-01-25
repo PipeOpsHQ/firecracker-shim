@@ -1,8 +1,8 @@
 site_name: firecracker-shim
 site_description: Kubernetes-native Firecracker runtime
-site_url: https://pipeops.github.io/firecracker-cri/
-repo_url: https://github.com/pipeops/firecracker-cri
-repo_name: pipeops/firecracker-cri
+site_url: https://pipeops.github.io/firecracker-shim/
+repo_url: https://github.com/PipeOpsHQ/firecracker-shim
+repo_name: PipeOpsHQ/firecracker-shim
 
 theme:
   name: material
@@ -30,6 +30,7 @@ theme:
 nav:
   - Home: index.md
   - Operations Guide: operations.md
+  - Existing Clusters: existing-clusters.md
   - Architecture: ARCHITECTURE.md
   - Launch Post: launch-post.md
 

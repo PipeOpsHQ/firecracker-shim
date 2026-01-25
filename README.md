@@ -547,4 +547,3 @@ Apache 2.0
 - [firecracker-go-sdk](https://github.com/firecracker-microvm/firecracker-go-sdk) - Go SDK
 - [containerd](https://containerd.io/) - Container runtime
 - [fsify](https://github.com/volantvm/fsify) - OCI to rootfs conversion
-# firecracker-shim
