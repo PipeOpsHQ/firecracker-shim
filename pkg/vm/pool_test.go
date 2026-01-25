@@ -107,8 +107,12 @@ func TestPool_Stats(t *testing.T) {
 	config := DefaultPoolConfig()
 	config.MaxSize = 10
 
-	// We pass nil manager because we won't call methods that use it
-	pool, _ := NewPool(nil, config, log)
+	// Create a real manager to avoid nil pointer in Close()
+	mgrConfig := DefaultManagerConfig()
+	mgrConfig.RuntimeDir = t.TempDir()
+	mgr, _ := NewManager(mgrConfig, log)
+
+	pool, _ := NewPool(mgr, config, log)
 	defer pool.Close(context.Background())
 
 	// Manually inject a sandbox into available

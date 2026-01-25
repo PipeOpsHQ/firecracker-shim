@@ -299,7 +299,7 @@ func (cli *CLI) getSandboxInfo(id string) SandboxInfo {
 	// Get PID from pid file or process lookup
 	pidFile := filepath.Join(sandboxDir, "firecracker.pid")
 	if data, err := os.ReadFile(pidFile); err == nil {
-		fmt.Sscanf(string(data), "%d", &info.PID)
+		_, _ = fmt.Sscanf(string(data), "%d", &info.PID)
 	}
 
 	// Check if process is running
@@ -538,17 +538,17 @@ func (cli *CLI) cmdPoolStatus(ctx context.Context) error {
 	// Parse Prometheus metrics
 	for _, line := range strings.Split(metrics, "\n") {
 		if strings.HasPrefix(line, "fc_cri_pool_available ") {
-			fmt.Sscanf(line, "fc_cri_pool_available %d", &status.Available)
+			_, _ = fmt.Sscanf(line, "fc_cri_pool_available %d", &status.Available)
 		} else if strings.HasPrefix(line, "fc_cri_pool_in_use ") {
-			fmt.Sscanf(line, "fc_cri_pool_in_use %d", &status.InUse)
+			_, _ = fmt.Sscanf(line, "fc_cri_pool_in_use %d", &status.InUse)
 		} else if strings.HasPrefix(line, "fc_cri_pool_max_size ") {
-			fmt.Sscanf(line, "fc_cri_pool_max_size %d", &status.MaxSize)
+			_, _ = fmt.Sscanf(line, "fc_cri_pool_max_size %d", &status.MaxSize)
 		} else if strings.HasPrefix(line, "fc_cri_pool_hits_total ") {
-			fmt.Sscanf(line, "fc_cri_pool_hits_total %d", &status.PoolHits)
+			_, _ = fmt.Sscanf(line, "fc_cri_pool_hits_total %d", &status.PoolHits)
 		} else if strings.HasPrefix(line, "fc_cri_pool_misses_total ") {
-			fmt.Sscanf(line, "fc_cri_pool_misses_total %d", &status.PoolMisses)
+			_, _ = fmt.Sscanf(line, "fc_cri_pool_misses_total %d", &status.PoolMisses)
 		} else if strings.HasPrefix(line, "fc_cri_pool_hit_rate ") {
-			fmt.Sscanf(line, "fc_cri_pool_hit_rate %f", &status.HitRate)
+			_, _ = fmt.Sscanf(line, "fc_cri_pool_hit_rate %f", &status.HitRate)
 		}
 	}
 

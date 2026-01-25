@@ -350,7 +350,7 @@ func (s *Service) createExt4Image(ctx context.Context, path string, sizeMB int64
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("mount failed: %w: %s", err, output)
 	}
-	defer exec.Command("umount", mountDir).Run()
+	defer func() { _ = exec.Command("umount", mountDir).Run() }()
 
 	// Copy content
 	cmd = exec.CommandContext(ctx, "cp", "-a", contentDir+"/.", mountDir)

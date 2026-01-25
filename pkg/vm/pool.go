@@ -208,7 +208,7 @@ func (p *Pool) Warm(ctx context.Context, count int, config domain.VMConfig) erro
 				p.log.WithField("sandbox_id", sandbox.ID).Debug("Added warmed VM to pool")
 			default:
 				// Pool full
-				p.manager.DestroyVM(ctx, sandbox)
+				_ = p.manager.DestroyVM(ctx, sandbox)
 			}
 		}()
 	}

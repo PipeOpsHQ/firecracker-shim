@@ -113,8 +113,6 @@ func TestManager_DestroyVM_Cleanup(t *testing.T) {
 	// Create a sandbox directory structure to verify cleanup
 	sbID := "test-cleanup"
 	sbDir := filepath.Join(tmpDir, sbID)
-	os.MkdirAll(sbDir, 0755)
-
 	_ = os.MkdirAll(sbDir, 0755)
 
 	sb := domain.NewSandbox(sbID)
