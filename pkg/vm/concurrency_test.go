@@ -43,10 +43,7 @@ func TestManager_Concurrency(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 50; j++ {
-				_, ok := mgr.GetSandbox(sbID)
-				if !ok {
-					// It might be deleted by the Destroy routine, that's expected
-				}
+				_, _ = mgr.GetSandbox(sbID)
 				time.Sleep(1 * time.Millisecond)
 			}
 		}()
