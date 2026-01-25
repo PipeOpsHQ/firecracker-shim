@@ -163,7 +163,9 @@ jobs:
 
       - name: Setup binaries
         run: |
-          sudo cp dist/binaries/* /usr/local/bin/
+          sudo cp dist/binaries/containerd-shim-fc-v2 /usr/local/bin/
+          sudo cp dist/binaries/fc-agent /usr/local/bin/
+          sudo cp dist/binaries/fcctl /usr/local/bin/
           sudo chmod +x /usr/local/bin/containerd-shim-fc-v2 /usr/local/bin/fc-agent /usr/local/bin/fcctl
 
       - name: Run integration tests
