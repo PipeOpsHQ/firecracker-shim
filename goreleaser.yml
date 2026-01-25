@@ -75,6 +75,9 @@ release:
   extra_files:
     - glob: deploy/installer/daemonset.yaml
 
+git:
+  ignore_dirty: true
+
 # Note: We are keeping the Docker installer build in GitHub Actions
 # because it requires downloading external non-Go assets (kernel, firecracker binary)
 # which is complex to orchestrate inside a pure goreleaser config without custom scripts.
