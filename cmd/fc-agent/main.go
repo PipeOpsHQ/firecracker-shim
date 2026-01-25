@@ -297,7 +297,9 @@ func (a *Agent) startContainer(params map[string]interface{}) (int, error) {
 	}
 
 	var pid int
-	fmt.Sscanf(string(pidData), "%d", &pid)
+	if _, err := fmt.Sscanf(string(pidData), "%d", &pid); err != nil {
+		return 0, fmt.Errorf("failed to parse pid: %w", err)
+	}
 
 	a.mu.Lock()
 	container.PID = pid
@@ -321,7 +323,7 @@ func (a *Agent) stopContainer(params map[string]interface{}) error {
 
 	// Try graceful stop with SIGTERM
 	cmd := exec.Command(runcBinary, "kill", id, "SIGTERM")
-	cmd.Run()
+	_ = cmd.Run()
 
 	// Wait for container to stop
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
@@ -335,7 +337,7 @@ func (a *Agent) stopContainer(params map[string]interface{}) error {
 
 	// Force kill if still running
 	cmd = exec.Command(runcBinary, "kill", id, "SIGKILL")
-	cmd.Run()
+	_ = cmd.Run()
 
 	a.mu.Lock()
 	if container, exists := a.containers[id]; exists {
@@ -355,7 +357,7 @@ func (a *Agent) removeContainer(params map[string]interface{}) error {
 
 	// Run runc delete
 	cmd := exec.Command(runcBinary, "delete", "--force", id)
-	cmd.Run() // Ignore errors
+	_ = cmd.Run() // Ignore errors
 
 	// Clean up container directory
 	containerDir := filepath.Join(containerRoot, id)
@@ -465,13 +467,13 @@ func readCgroupValue(path, key string) uint64 {
 
 	if key == "" {
 		var val uint64
-		fmt.Sscanf(string(data), "%d", &val)
+		_, _ = fmt.Sscanf(string(data), "%d", &val)
 		return val
 	}
 
 	// Parse key-value format
 	var val uint64
-	fmt.Sscanf(string(data), key+" %d", &val)
+	_, _ = fmt.Sscanf(string(data), key+" %d", &val)
 	return val
 }
 

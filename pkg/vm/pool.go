@@ -22,24 +22,24 @@ import (
 type Pool struct {
 	mu sync.Mutex
 
-	manager    *Manager
-	config     PoolConfig
-	log        *logrus.Entry
+	manager *Manager
+	config  PoolConfig
+	log     *logrus.Entry
 
 	// Pool of ready VMs
-	available  chan *domain.Sandbox
+	available chan *domain.Sandbox
 
 	// Tracking
-	inUse      map[string]*domain.Sandbox
+	inUse map[string]*domain.Sandbox
 
 	// Statistics
-	stats      poolStats
+	stats poolStats
 
 	// Lifecycle
-	ctx        context.Context
-	cancel     context.CancelFunc
-	warmSem    *semaphore.Weighted // Limit concurrent warming
-	closed     bool
+	ctx     context.Context
+	cancel  context.CancelFunc
+	warmSem *semaphore.Weighted // Limit concurrent warming
+	closed  bool
 }
 
 type poolStats struct {
@@ -123,7 +123,7 @@ func (p *Pool) Acquire(ctx context.Context, config domain.VMConfig) (*domain.San
 		// Customize the VM for this workload
 		if err := p.customizeVM(ctx, sandbox, config); err != nil {
 			// Failed to customize, destroy and create fresh
-			p.manager.DestroyVM(ctx, sandbox)
+			_ = p.manager.DestroyVM(ctx, sandbox)
 			return p.createFresh(ctx, config)
 		}
 
@@ -170,7 +170,7 @@ func (p *Pool) Release(ctx context.Context, sandbox *domain.Sandbox) error {
 		p.log.WithField("sandbox_id", sandbox.ID).Debug("Returned VM to pool")
 	default:
 		// Pool full (race condition), destroy
-		return p.manager.DestroyVM(ctx, sandbox)
+		_ = p.manager.DestroyVM(ctx, sandbox)
 	}
 
 	return nil
@@ -348,7 +348,7 @@ func (p *Pool) replenish() {
 		ctx, cancel := context.WithTimeout(p.ctx, 30*time.Second)
 		defer cancel()
 
-		p.Warm(ctx, needed, p.config.DefaultVMConfig)
+		_ = p.Warm(ctx, needed, p.config.DefaultVMConfig)
 	}
 }
 
@@ -381,7 +381,7 @@ func (p *Pool) cleanupIdle() {
 				}).Debug("Removing idle VM from pool")
 
 				ctx, cancel := context.WithTimeout(p.ctx, 10*time.Second)
-				p.manager.DestroyVM(ctx, sandbox)
+				_ = p.manager.DestroyVM(ctx, sandbox)
 				cancel()
 			} else {
 				keep = append(keep, sandbox)
@@ -400,7 +400,7 @@ refill:
 		default:
 			// Pool somehow full, destroy
 			ctx, cancel := context.WithTimeout(p.ctx, 10*time.Second)
-			p.manager.DestroyVM(ctx, sandbox)
+			_ = p.manager.DestroyVM(ctx, sandbox)
 			cancel()
 		}
 	}

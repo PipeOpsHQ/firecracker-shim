@@ -34,7 +34,13 @@ func TestNewManager(t *testing.T) {
 
 func TestManager_GetSandbox(t *testing.T) {
 	log := logrus.NewEntry(logrus.New())
-	mgr, _ := NewManager(DefaultManagerConfig(), log)
+	config := DefaultManagerConfig()
+	config.RuntimeDir = t.TempDir()
+
+	mgr, err := NewManager(config, log)
+	if err != nil {
+		t.Fatalf("NewManager failed: %v", err)
+	}
 
 	// Add a dummy sandbox
 	sb := domain.NewSandbox("test-id")
@@ -58,7 +64,13 @@ func TestManager_GetSandbox(t *testing.T) {
 
 func TestManager_ListSandboxes(t *testing.T) {
 	log := logrus.NewEntry(logrus.New())
-	mgr, _ := NewManager(DefaultManagerConfig(), log)
+	config := DefaultManagerConfig()
+	config.RuntimeDir = t.TempDir()
+
+	mgr, err := NewManager(config, log)
+	if err != nil {
+		t.Fatalf("NewManager failed: %v", err)
+	}
 
 	mgr.sandboxes["sb1"] = domain.NewSandbox("sb1")
 	mgr.sandboxes["sb2"] = domain.NewSandbox("sb2")
@@ -93,12 +105,17 @@ func TestManager_DestroyVM_Cleanup(t *testing.T) {
 	config := DefaultManagerConfig()
 	config.RuntimeDir = tmpDir
 
-	mgr, _ := NewManager(config, log)
+	mgr, err := NewManager(config, log)
+	if err != nil {
+		t.Fatalf("NewManager failed: %v", err)
+	}
 
 	// Create a sandbox directory structure to verify cleanup
 	sbID := "test-cleanup"
 	sbDir := filepath.Join(tmpDir, sbID)
 	os.MkdirAll(sbDir, 0755)
+
+	_ = os.MkdirAll(sbDir, 0755)
 
 	sb := domain.NewSandbox(sbID)
 	sb.State = domain.SandboxStopped // Already stopped to skip StopVM logic which needs VM

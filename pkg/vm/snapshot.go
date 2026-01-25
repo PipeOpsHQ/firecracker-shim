@@ -181,7 +181,7 @@ func (sm *SnapshotManager) CreateGoldenSnapshot(ctx context.Context) (*Snapshot,
 	}
 
 	// Destroy the source VM (we only need the snapshot)
-	sm.vmManager.DestroyVM(ctx, sandbox)
+	_ = sm.vmManager.DestroyVM(ctx, sandbox)
 
 	sm.mu.Lock()
 	sm.goldenSnapshot = snap
@@ -234,7 +234,7 @@ func (sm *SnapshotManager) CreateSnapshot(ctx context.Context, sandbox *domain.S
 	// Use the machine's CreateSnapshot method
 	if err := sm.createSnapshotViaAPI(ctx, sandbox.VM, snapshotParams); err != nil {
 		// Resume VM on failure
-		sandbox.VM.ResumeVM(ctx)
+		_ = sandbox.VM.ResumeVM(ctx)
 		return nil, fmt.Errorf("failed to create snapshot: %w", err)
 	}
 
@@ -552,19 +552,8 @@ func (sm *SnapshotManager) createSnapshotViaAPI(ctx context.Context, machine *fi
 	return nil
 }
 
-// getMemoryBackendType returns the memory backend type string.
-// Note: MemoryBackend configuration may vary by Firecracker version.
-func (sm *SnapshotManager) getMemoryBackendType() string {
-	switch sm.config.MemoryBackend {
-	case "Uffd":
-		// Userfaultfd for lazy memory loading (even faster restore)
-		return "Uffd"
-	default:
-		// File-based memory backend
-		return "File"
-	}
-}
-
+=======
+// =============================================================================
 // =============================================================================
 // Snapshot-Aware Pool Integration
 // =============================================================================
@@ -637,7 +626,7 @@ func (sp *SnapshotPool) WarmFromSnapshot(ctx context.Context, count int) error {
 			sp.log.WithField("sandbox_id", sandbox.ID).Debug("Added restored VM to pool")
 		default:
 			// Pool full
-			sp.Pool.manager.DestroyVM(ctx, sandbox)
+			_ = sp.Pool.manager.DestroyVM(ctx, sandbox)
 		}
 	}
 

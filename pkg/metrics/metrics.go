@@ -348,15 +348,15 @@ func (c *Collector) PrometheusHandler() http.Handler {
 // =============================================================================
 
 func writeMetric(w http.ResponseWriter, name, metricType, help string, value int64) {
-	w.Write([]byte("# HELP " + name + " " + help + "\n"))
-	w.Write([]byte("# TYPE " + name + " " + metricType + "\n"))
-	w.Write([]byte(name + " " + itoa(value) + "\n"))
+	_, _ = w.Write([]byte("# HELP " + name + " " + help + "\n"))
+	_, _ = w.Write([]byte("# TYPE " + name + " " + metricType + "\n"))
+	_, _ = w.Write([]byte(name + " " + itoa(value) + "\n"))
 }
 
 func writeMetricFloat(w http.ResponseWriter, name, metricType, help string, value float64) {
-	w.Write([]byte("# HELP " + name + " " + help + "\n"))
-	w.Write([]byte("# TYPE " + name + " " + metricType + "\n"))
-	w.Write([]byte(name + " " + ftoa(value) + "\n"))
+	_, _ = w.Write([]byte("# HELP " + name + " " + help + "\n"))
+	_, _ = w.Write([]byte("# TYPE " + name + " " + metricType + "\n"))
+	_, _ = w.Write([]byte(name + " " + ftoa(value) + "\n"))
 }
 
 func itoa(i int64) string {

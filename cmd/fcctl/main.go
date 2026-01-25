@@ -147,7 +147,7 @@ func main() {
 }
 
 func (cli *CLI) printUsage() {
-	fmt.Println(`fcctl - Firecracker CRI Runtime Debug Tool
+	fmt.Print(`fcctl - Firecracker CRI Runtime Debug Tool
 
 Usage:
   fcctl [flags] <command> [args]
@@ -410,7 +410,7 @@ func (cli *CLI) cmdInspect(ctx context.Context, args []string) error {
 	// Read metadata if exists
 	metaPath := filepath.Join(sandboxDir, "metadata.json")
 	if data, err := os.ReadFile(metaPath); err == nil {
-		json.Unmarshal(data, &info.Metadata)
+		_ = json.Unmarshal(data, &info.Metadata)
 	}
 
 	// Test agent connection
@@ -478,7 +478,7 @@ func (cli *CLI) testAgentConnection(vsockPath string) *AgentInfo {
 	}
 
 	// Read response
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 	var resp map[string]interface{}
 	if err := json.NewDecoder(conn).Decode(&resp); err != nil {
 		return info
@@ -764,7 +764,7 @@ func (cli *CLI) tailFile(ctx context.Context, path string) error {
 	defer file.Close()
 
 	// Seek to end
-	file.Seek(0, io.SeekEnd)
+	_, _ = file.Seek(0, io.SeekEnd)
 
 	buf := make([]byte, 4096)
 	for {
@@ -829,7 +829,7 @@ func (cli *CLI) cmdExec(ctx context.Context, args []string) error {
 	}
 
 	// Read response
-	conn.SetReadDeadline(time.Now().Add(35 * time.Second))
+	_ = conn.SetReadDeadline(time.Now().Add(35 * time.Second))
 	var resp struct {
 		Result struct {
 			ExitCode int    `json:"exit_code"`
@@ -1051,7 +1051,7 @@ func (cli *CLI) cmdCleanup(ctx context.Context, args []string) error {
 	fmt.Print("Clean up these resources? [y/N] ")
 
 	var response string
-	fmt.Scanln(&response)
+	_, _ = fmt.Scanln(&response)
 	if response != "y" && response != "Y" {
 		fmt.Println("Aborted")
 		return nil
@@ -1063,7 +1063,7 @@ func (cli *CLI) cmdCleanup(ctx context.Context, args []string) error {
 		// Kill process if still running
 		if sb.PID > 0 {
 			if process, err := os.FindProcess(sb.PID); err == nil {
-				process.Kill()
+				_ = process.Kill()
 			}
 		}
 

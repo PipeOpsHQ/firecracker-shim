@@ -30,11 +30,11 @@ import (
 type Service struct {
 	mu sync.RWMutex
 
-	config   ServiceConfig
-	log      *logrus.Entry
+	config ServiceConfig
+	log    *logrus.Entry
 
 	// Cache of converted images
-	cache    map[string]*cachedImage
+	cache map[string]*cachedImage
 }
 
 // ServiceConfig configures the image service.
@@ -66,7 +66,7 @@ type cachedImage struct {
 	ref        string
 	digest     string
 	rootfsPath string
-	sizeMB     int64
+	// sizeMB     int64 // Unused
 }
 
 // NewService creates a new image service.
@@ -281,7 +281,7 @@ func (s *Service) exportImage(ctx context.Context, ref, destDir string) error {
 	cleanupCmd := exec.CommandContext(ctx, "ctr",
 		"--address", s.config.ContainerdSocket,
 		"containers", "delete", containerID)
-	cleanupCmd.Run()
+	_ = cleanupCmd.Run()
 
 	return nil
 }
@@ -332,7 +332,7 @@ func (s *Service) createExt4Image(ctx context.Context, path string, sizeMB int64
 		"-F",           // Force, don't ask
 		"-L", "rootfs", // Label
 		"-O", "^metadata_csum,^64bit", // Compatibility options
-		"-q",           // Quiet
+		"-q", // Quiet
 		path)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("mkfs.ext4 failed: %w: %s", err, output)

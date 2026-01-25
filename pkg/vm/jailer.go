@@ -216,14 +216,14 @@ func (jm *JailerManager) CreateJailedVM(ctx context.Context, sandboxID string, v
 
 	// Setup device nodes
 	if err := jm.setupDevices(chrootDir); err != nil {
-		jm.cleanupChroot(chrootDir)
+		_ = jm.cleanupChroot(chrootDir)
 		return nil, nil, fmt.Errorf("failed to setup devices: %w", err)
 	}
 
 	// Bind mount kernel
 	kernelDest := filepath.Join(chrootDir, "kernel")
 	if err := jm.bindMount(vmConfig.KernelPath, kernelDest); err != nil {
-		jm.cleanupChroot(chrootDir)
+		_ = jm.cleanupChroot(chrootDir)
 		return nil, nil, fmt.Errorf("failed to bind mount kernel: %w", err)
 	}
 
@@ -231,7 +231,7 @@ func (jm *JailerManager) CreateJailedVM(ctx context.Context, sandboxID string, v
 	if vmConfig.RootDrive.PathOnHost != "" {
 		rootfsDest := filepath.Join(chrootDir, "rootfs.ext4")
 		if err := jm.bindMount(vmConfig.RootDrive.PathOnHost, rootfsDest); err != nil {
-			jm.cleanupChroot(chrootDir)
+			_ = jm.cleanupChroot(chrootDir)
 			return nil, nil, fmt.Errorf("failed to bind mount rootfs: %w", err)
 		}
 	}
@@ -246,7 +246,7 @@ func (jm *JailerManager) CreateJailedVM(ctx context.Context, sandboxID string, v
 
 	// Setup cgroup
 	if err := jm.setupCgroup(jailedVM); err != nil {
-		jm.cleanupChroot(chrootDir)
+		_ = jm.cleanupChroot(chrootDir)
 		return nil, nil, fmt.Errorf("failed to setup cgroup: %w", err)
 	}
 
@@ -374,8 +374,8 @@ func (jm *JailerManager) DestroyJailedVM(ctx context.Context, sandboxID string) 
 	if jailedVM.PID > 0 {
 		process, err := os.FindProcess(jailedVM.PID)
 		if err == nil {
-			process.Kill()
-			process.Wait()
+			_ = process.Kill()
+			_, _ = process.Wait()
 		}
 	}
 
@@ -458,7 +458,7 @@ func (jm *JailerManager) setupDevices(chrootDir string) error {
 		}
 
 		// Set ownership
-		os.Chown(dev.path, jm.config.UID, jm.config.GID)
+		_ = os.Chown(dev.path, jm.config.UID, jm.config.GID)
 	}
 
 	return nil
@@ -517,24 +517,24 @@ func (jm *JailerManager) setupCgroupV2(jailedVM *JailedVM) error {
 	limits := jm.config.ResourceLimits
 
 	if limits.CPUWeight > 0 {
-		os.WriteFile(filepath.Join(cgroupPath, "cpu.weight"),
+		_ = os.WriteFile(filepath.Join(cgroupPath, "cpu.weight"),
 			[]byte(strconv.FormatUint(limits.CPUWeight, 10)), 0644)
 	}
 
 	if limits.CPUQuota > 0 && limits.CPUPeriod > 0 {
 		// Format: $MAX $PERIOD
 		quota := fmt.Sprintf("%d %d", limits.CPUQuota, limits.CPUPeriod)
-		os.WriteFile(filepath.Join(cgroupPath, "cpu.max"), []byte(quota), 0644)
+		_ = os.WriteFile(filepath.Join(cgroupPath, "cpu.max"), []byte(quota), 0644)
 	}
 
 	// Configure memory limits
 	if limits.MaxMemoryBytes > 0 {
-		os.WriteFile(filepath.Join(cgroupPath, "memory.max"),
+		_ = os.WriteFile(filepath.Join(cgroupPath, "memory.max"),
 			[]byte(strconv.FormatUint(limits.MaxMemoryBytes, 10)), 0644)
 	}
 
 	// Enable controllers
-	os.WriteFile(filepath.Join(cgroupPath, "cgroup.subtree_control"),
+	_ = os.WriteFile(filepath.Join(cgroupPath, "cgroup.subtree_control"),
 		[]byte("+cpu +memory +io"), 0644)
 
 	return nil
@@ -555,23 +555,23 @@ func (jm *JailerManager) setupCgroupV1(jailedVM *JailedVM) error {
 		switch ctrl {
 		case "cpu":
 			if limits.CPUQuota > 0 {
-				os.WriteFile(filepath.Join(cgroupPath, "cpu.cfs_quota_us"),
+				_ = os.WriteFile(filepath.Join(cgroupPath, "cpu.cfs_quota_us"),
 					[]byte(strconv.FormatInt(limits.CPUQuota, 10)), 0644)
 			}
 			if limits.CPUPeriod > 0 {
-				os.WriteFile(filepath.Join(cgroupPath, "cpu.cfs_period_us"),
+				_ = os.WriteFile(filepath.Join(cgroupPath, "cpu.cfs_period_us"),
 					[]byte(strconv.FormatInt(limits.CPUPeriod, 10)), 0644)
 			}
 
 		case "memory":
 			if limits.MaxMemoryBytes > 0 {
-				os.WriteFile(filepath.Join(cgroupPath, "memory.limit_in_bytes"),
+				_ = os.WriteFile(filepath.Join(cgroupPath, "memory.limit_in_bytes"),
 					[]byte(strconv.FormatUint(limits.MaxMemoryBytes, 10)), 0644)
 			}
 
 		case "pids":
 			if limits.MaxProcesses > 0 {
-				os.WriteFile(filepath.Join(cgroupPath, "pids.max"),
+				_ = os.WriteFile(filepath.Join(cgroupPath, "pids.max"),
 					[]byte(strconv.FormatUint(limits.MaxProcesses, 10)), 0644)
 			}
 		}
@@ -594,7 +594,7 @@ func (jm *JailerManager) cleanupChroot(chrootDir string) error {
 	}
 
 	for _, mount := range mounts {
-		syscall.Unmount(mount, 0)
+		_ = syscall.Unmount(mount, 0)
 	}
 
 	// Remove the entire chroot tree

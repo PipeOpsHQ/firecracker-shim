@@ -184,7 +184,7 @@ func (m *Manager) StopVM(ctx context.Context, sandbox *domain.Sandbox) error {
 	// Try graceful shutdown first
 	if err := sandbox.VM.Shutdown(ctx); err != nil {
 		m.log.WithError(err).Warn("Graceful shutdown failed, forcing stop")
-		sandbox.VM.StopVMM()
+		_ = sandbox.VM.StopVMM()
 	}
 
 	// Wait for process exit

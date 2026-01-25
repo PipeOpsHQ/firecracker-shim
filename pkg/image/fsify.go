@@ -336,7 +336,7 @@ func (f *FsifyConverter) convertNative(ctx context.Context, imageRef string) (*C
 
 	// Embed OCI config in rootfs
 	if ociConfig != nil {
-		f.embedOCIConfig(rootfsDir, ociConfig)
+		_ = f.embedOCIConfig(rootfsDir, ociConfig)
 	}
 
 	// Step 4: Calculate required size
@@ -527,7 +527,7 @@ func (f *FsifyConverter) createFilesystemImage(ctx context.Context, outputPath s
 
 	// Ensure unmount on exit
 	defer func() {
-		exec.Command("umount", mountDir).Run()
+		_ = exec.Command("umount", mountDir).Run()
 	}()
 
 	// The umoci unpack creates a bundle structure, rootfs is inside
@@ -543,7 +543,7 @@ func (f *FsifyConverter) createFilesystemImage(ctx context.Context, outputPath s
 	}
 
 	// Sync before unmount
-	exec.Command("sync").Run()
+	_ = exec.Command("sync").Run()
 
 	return nil
 }
@@ -582,7 +582,7 @@ func (f *FsifyConverter) extractOCIConfig(imagePath string) *OCIImageConfig {
 	if err := cmd.Run(); err != nil {
 		return nil
 	}
-	defer exec.Command("umount", mountDir).Run()
+	defer func() { _ = exec.Command("umount", mountDir).Run() }()
 
 	configPath := filepath.Join(mountDir, "etc", "fsify-entrypoint")
 	data, err := os.ReadFile(configPath)

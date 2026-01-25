@@ -296,8 +296,8 @@ func (c *Client) call(ctx context.Context, req *Request) (*Response, error) {
 
 	// Set deadline from context
 	if deadline, ok := ctx.Deadline(); ok {
-		c.conn.SetDeadline(deadline)
-		defer c.conn.SetDeadline(time.Time{})
+		_ = c.conn.SetDeadline(deadline)
+		defer func() { _ = c.conn.SetDeadline(time.Time{}) }()
 	}
 
 	// Send request

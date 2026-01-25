@@ -132,10 +132,10 @@ func TestValidate(t *testing.T) {
 	binFile := filepath.Join(tmpDir, "firecracker")
 	kernelFile := filepath.Join(tmpDir, "vmlinux")
 
-	os.MkdirAll(runtimeDir, 0755)
-	os.MkdirAll(rootDir, 0755)
-	os.WriteFile(binFile, []byte("fake binary"), 0755)
-	os.WriteFile(kernelFile, []byte("fake kernel"), 0644)
+	_ = os.MkdirAll(runtimeDir, 0755)
+	_ = os.MkdirAll(rootDir, 0755)
+	_ = os.WriteFile(binFile, []byte("fake binary"), 0755)
+	_ = os.WriteFile(kernelFile, []byte("fake kernel"), 0644)
 
 	tests := []struct {
 		name    string

@@ -32,7 +32,7 @@ import (
 
 const (
 	// shimID is used by containerd to identify this runtime.
-	shimID = "io.containerd.firecracker.v2"
+	// shimID = "io.containerd.firecracker.v2"
 
 	// vsockAgentPort is the port the guest agent listens on.
 	vsockAgentPort = 1024

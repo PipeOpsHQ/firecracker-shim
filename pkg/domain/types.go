@@ -68,22 +68,22 @@ type Sandbox struct {
 	mu sync.RWMutex
 
 	// Identity
-	ID        string            // Unique sandbox identifier
-	Name      string            // Human-readable name
-	Namespace string            // Kubernetes namespace
-	Labels    map[string]string // Pod labels
+	ID          string            // Unique sandbox identifier
+	Name        string            // Human-readable name
+	Namespace   string            // Kubernetes namespace
+	Labels      map[string]string // Pod labels
 	Annotations map[string]string
 
 	// VM State
-	State       SandboxState
-	VM          *firecracker.Machine // The actual Firecracker VM
-	VMConfig    VMConfig             // VM configuration used
-	PID         int                  // VMM process ID
+	State    SandboxState
+	VM       *firecracker.Machine // The actual Firecracker VM
+	VMConfig VMConfig             // VM configuration used
+	PID      int                  // VMM process ID
 
 	// Communication
-	VsockPath   string    // Unix socket for vsock
-	VsockCID    uint32    // Guest context ID
-	AgentConn   net.Conn  // Connection to guest agent
+	VsockPath string   // Unix socket for vsock
+	VsockCID  uint32   // Guest context ID
+	AgentConn net.Conn // Connection to guest agent
 
 	// Networking
 	NetworkNamespace string
@@ -91,19 +91,19 @@ type Sandbox struct {
 	Gateway          net.IP
 
 	// Storage
-	RootfsPath  string // Path to rootfs block device
+	RootfsPath string // Path to rootfs block device
 
 	// Containers within this sandbox
 	Containers map[string]*Container
 
 	// Lifecycle timestamps
-	CreatedAt   time.Time
-	StartedAt   time.Time
-	FinishedAt  time.Time
+	CreatedAt  time.Time
+	StartedAt  time.Time
+	FinishedAt time.Time
 
 	// Metadata for pool management
-	PooledAt    time.Time // When this VM was added to pool (if pre-warmed)
-	FromPool    bool      // Whether this sandbox came from the pool
+	PooledAt time.Time // When this VM was added to pool (if pre-warmed)
+	FromPool bool      // Whether this sandbox came from the pool
 }
 
 // NewSandbox creates a new sandbox with the given ID.
@@ -143,7 +143,7 @@ func (s *Sandbox) RemoveContainer(id string) {
 
 // Container represents a container running inside a sandbox (microVM).
 type Container struct {
-	mu sync.RWMutex
+	// mu sync.RWMutex // Unused
 
 	// Identity
 	ID        string // Unique container identifier
@@ -153,9 +153,9 @@ type Container struct {
 	ImageRef  string // Resolved image reference (digest)
 
 	// State
-	State      ContainerState
-	PID        int   // Process ID inside the VM
-	ExitCode   int32
+	State    ContainerState
+	PID      int // Process ID inside the VM
+	ExitCode int32
 
 	// Configuration
 	Command    []string
@@ -173,7 +173,7 @@ type Container struct {
 	FinishedAt time.Time
 
 	// Logs
-	LogPath    string
+	LogPath string
 }
 
 // NewContainer creates a new container with the given ID.

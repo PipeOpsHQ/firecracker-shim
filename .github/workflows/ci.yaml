@@ -135,8 +135,8 @@ jobs:
           FIRECRACKER_VERSION="v1.6.0"
           curl -sL "https://github.com/firecracker-microvm/firecracker/releases/download/${FIRECRACKER_VERSION}/firecracker-${FIRECRACKER_VERSION}-x86_64.tgz" | tar xz
           ls -R release-* || echo "No release directory found"
-          sudo mv release-*/firecracker* /usr/local/bin/firecracker
-          sudo mv release-*/jailer* /usr/local/bin/jailer
+          sudo mv release-*/firecracker-v*-x86_64 /usr/local/bin/firecracker
+          sudo mv release-*/jailer-v*-x86_64 /usr/local/bin/jailer
           rm -rf release-*
           firecracker --version
 
@@ -265,8 +265,8 @@ jobs:
           # Download Firecracker & Jailer
           FC_VERSION="v1.6.0"
           curl -L "https://github.com/firecracker-microvm/firecracker/releases/download/${FC_VERSION}/firecracker-${FC_VERSION}-x86_64.tgz" | tar xz
-          mv release-*/firecracker* build_context/binaries/firecracker
-          mv release-*/jailer* build_context/binaries/jailer
+          mv release-*/firecracker-v*-x86_64 build_context/binaries/firecracker
+          mv release-*/jailer-v*-x86_64 build_context/binaries/jailer
           rm -rf release-*
 
           # Copy Config
