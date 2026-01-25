@@ -1,0 +1,22 @@
+# Binaries
+/bin
+/dist
+
+# Build artifacts
+/release
+
+# Test artifacts
+/coverage.out
+/test-results
+
+# Kernel build
+/tmp/kernel-build
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# MacOS
+.DS_Store
