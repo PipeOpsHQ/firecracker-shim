@@ -44,17 +44,17 @@ It’s designed with a "less is more" philosophy:
 
 ## Key Features
 
-### 🚀 Speed & Efficiency
+### Speed & Efficiency
 
 - **<150ms Cold Starts**: From pod creation to running container.
 - **<50ms Warm Starts**: Pre-warmed VM pool for instant provisioning.
 - **64MB Overhead**: Run thousands of secure pods on a single node.
 
-### 🛡️ Real Isolation
+### Real Isolation
 
 Each pod gets its own kernel. If a container breaks out, it’s trapped in the microVM, protecting the host and other tenants.
 
-### 🔌 Kubernetes Native
+### Kubernetes Native
 
 It works out of the box with standard Kubernetes networking (CNI) and storage. Use it with a simple RuntimeClass:
 

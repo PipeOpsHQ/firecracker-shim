@@ -7,6 +7,7 @@ This guide covers the installation of `firecracker-shim` in various environments
 Before installing, ensure your environment meets the following requirements:
 
 ### Hardware / VM
+
 - **Architecture**: x86_64 (AMD64)
 - **Virtualization**: KVM support is **required**.
   - **Bare Metal**: Enable VT-x/AMD-V in BIOS.
@@ -14,6 +15,7 @@ Before installing, ensure your environment meets the following requirements:
   - **Local (Linux)**: Verify with `kvm-ok` or check `ls -la /dev/kvm`.
 
 ### Software
+
 - **OS**: Linux (Kernel 4.14+, recommended 5.10+)
 - **Container Runtime**: `containerd` 1.6+
 - **Kubernetes**: 1.24+ (if using with K8s)
@@ -27,15 +29,18 @@ Before installing, ensure your environment meets the following requirements:
 The easiest way to install on a Kubernetes cluster. This deploys a privileged pod to every node that installs the necessary binaries and configuration.
 
 1.  **Deploy the Installer**:
+
     ```bash
     kubectl apply -f https://github.com/PipeOpsHQ/firecracker-shim/releases/latest/download/firecracker-shim-installer.yaml
     ```
 
 2.  **Verify Installation**:
     Check the logs of the installer pods:
+
     ```bash
     kubectl -n kube-system logs -l app=firecracker-shim-installer
     ```
+
     You should see "Installation successful!".
 
 3.  **Install RuntimeClass**:
@@ -65,6 +70,7 @@ For development or single-node setups without Kubernetes.
 
 1.  **Download Release**:
     Get the latest release from [GitHub Releases](https://github.com/PipeOpsHQ/firecracker-shim/releases).
+
     ```bash
     VERSION="v0.1.0"
     wget https://github.com/PipeOpsHQ/firecracker-shim/releases/download/${VERSION}/firecracker-shim_${VERSION}_linux_amd64.tar.gz
@@ -72,6 +78,7 @@ For development or single-node setups without Kubernetes.
     ```
 
 2.  **Install Binaries**:
+
     ```bash
     sudo cp containerd-shim-fc-v2 /usr/local/bin/
     sudo cp fc-agent /usr/local/bin/
@@ -80,18 +87,21 @@ For development or single-node setups without Kubernetes.
 
 3.  **Install Assets (Kernel & Rootfs)**:
     You need a compatible Linux kernel and a base rootfs for the VM.
-    
-    *Development/Test Assets:*
+
+    _Development/Test Assets:_
+
     ```bash
     sudo mkdir -p /var/lib/fc-cri/rootfs
-    
+
     # Download test assets (example URLs - replace with your build or trusted source)
     # wget -O /var/lib/fc-cri/vmlinux https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/kernels/vmlinux-5.10.186
     # wget -O /var/lib/fc-cri/rootfs/base.ext4 https://...
     ```
-    *Alternatively, build them using `make kernel` and `make rootfs` in the repo.*
+
+    _Alternatively, build them using `make kernel` and `make rootfs` in the repo._
 
 4.  **Install Config**:
+
     ```bash
     sudo mkdir -p /etc/fc-cri
     sudo cp config.toml /etc/fc-cri/
@@ -115,23 +125,27 @@ For development or single-node setups without Kubernetes.
 ## Verifying Installation
 
 ### 1. Check Component Health
+
 Use the `fcctl` tool to verify the runtime components.
 
 ```bash
 sudo fcctl health
 ```
+
 Expected output:
+
 ```
-✓ Runtime is healthy
+[OK] Runtime is healthy
 Components:
-  ✓ runtime_dir          ok
-  ✓ kvm                  ok
-  ✓ firecracker          ok
-  ✓ kernel               ok
-  ✓ rootfs               ok
+  [OK]  runtime_dir          ok
+  [OK]  kvm                  ok
+  [OK]  firecracker          ok
+  [OK]  kernel               ok
+  [OK]  rootfs               ok
 ```
 
 ### 2. Run a Test Pod
+
 Create a pod using the `firecracker` runtime class.
 
 ```yaml
@@ -142,8 +156,8 @@ metadata:
 spec:
   runtimeClassName: firecracker
   containers:
-  - name: nginx
-    image: nginx:alpine
+    - name: nginx
+      image: nginx:alpine
 ```
 
 ```bash
@@ -154,6 +168,7 @@ kubectl get pod test-fc -o wide
 If the pod reaches `Running` state, congratulations! You are running a container inside a Firecracker microVM.
 
 ### 3. Inspect the VM
+
 On the worker node where the pod is running:
 
 ```bash
@@ -166,12 +181,15 @@ sudo fcctl inspect <sandbox-id>
 ## Uninstalling
 
 ### DaemonSet Uninstall
+
 ```bash
 kubectl delete -f https://github.com/PipeOpsHQ/firecracker-shim/releases/latest/download/firecracker-shim-installer.yaml
 ```
-*Note: This removes the installer, but binaries may persist on nodes depending on cleanup policy. To fully clean nodes, you may need to run a cleanup script.*
+
+_Note: This removes the installer, but binaries may persist on nodes depending on cleanup policy. To fully clean nodes, you may need to run a cleanup script._
 
 ### Manual Uninstall
+
 ```bash
 # Remove config
 sudo rm /etc/containerd/config.d/firecracker.toml

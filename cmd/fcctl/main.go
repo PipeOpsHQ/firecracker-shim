@@ -227,9 +227,9 @@ func (cli *CLI) cmdList(ctx context.Context, args []string) error {
 	}
 
 	for _, sb := range sandboxes {
-		socketStatus := "✗"
+		socketStatus := "No"
 		if sb.SocketOK {
-			socketStatus = "✓"
+			socketStatus = "Yes"
 		}
 
 		if cli.output == "wide" {
@@ -943,19 +943,19 @@ func (cli *CLI) cmdHealth(ctx context.Context, args []string) error {
 
 	// Print status
 	if status.Healthy {
-		fmt.Println("✓ Runtime is healthy")
+		fmt.Println("[OK] Runtime is healthy")
 	} else {
-		fmt.Println("✗ Runtime has issues")
+		fmt.Println("[ERR] Runtime has issues")
 	}
 	fmt.Println()
 
 	fmt.Println("Components:")
 	for name, state := range status.Components {
-		icon := "✓"
+		statusStr := "[OK] "
 		if state != "ok" {
-			icon = "✗"
+			statusStr = "[ERR]"
 		}
-		fmt.Printf("  %s %-20s %s\n", icon, name, state)
+		fmt.Printf("  %s %-20s %s\n", statusStr, name, state)
 	}
 
 	if len(status.Issues) > 0 {
@@ -1110,7 +1110,7 @@ func formatDuration(d time.Duration) string {
 
 func boolToStatus(b bool) string {
 	if b {
-		return "✓"
+		return "Yes"
 	}
-	return "✗"
+	return "No"
 }
