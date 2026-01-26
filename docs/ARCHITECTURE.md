@@ -25,13 +25,13 @@
 
 Kata Containers is the established solution for running containers in VMs on Kubernetes. However, it has significant overhead:
 
-| Resource | Kata Containers | Target for fc-cri |
-|----------|-----------------|-------------------|
-| Memory baseline | 160MB+ | 64-128MB |
-| Guest agent | ~50MB (kata-agent) | ~2-3MB (fc-agent) |
-| Cold start time | 500-800ms | <150ms |
-| Warm start time | N/A | <50ms |
-| Supported hypervisors | QEMU, Cloud-Hypervisor, Firecracker | Firecracker only |
+| Resource              | Kata Containers                     | Target for fc-cri |
+| --------------------- | ----------------------------------- | ----------------- |
+| Memory baseline       | 160MB+                              | 64-128MB          |
+| Guest agent           | ~50MB (kata-agent)                  | ~2-3MB (fc-agent) |
+| Cold start time       | 500-800ms                           | <150ms            |
+| Warm start time       | N/A                                 | <50ms             |
+| Supported hypervisors | QEMU, Cloud-Hypervisor, Firecracker | Firecracker only  |
 
 Kata's overhead comes from:
 
@@ -261,13 +261,13 @@ type VMConfig struct {
 
 ### Domain Services
 
-| Service | Responsibility |
-|---------|---------------|
-| `VMManager` | Create, stop, destroy Firecracker VMs |
-| `VMPool` | Pre-warm VMs for fast acquisition |
-| `AgentClient` | Communicate with guest agent via vsock |
-| `NetworkService` | CNI-based network setup and teardown |
-| `ImageService` | OCI image pull and block device conversion |
+| Service          | Responsibility                             |
+| ---------------- | ------------------------------------------ |
+| `VMManager`      | Create, stop, destroy Firecracker VMs      |
+| `VMPool`         | Pre-warm VMs for fast acquisition          |
+| `AgentClient`    | Communicate with guest agent via vsock     |
+| `NetworkService` | CNI-based network setup and teardown       |
+| `ImageService`   | OCI image pull and block device conversion |
 
 ---
 
@@ -278,6 +278,7 @@ type VMConfig struct {
 **Decision**: Implement a containerd shim rather than a standalone CRI server.
 
 **Rationale**:
+
 - containerd handles CRI protocol, image management, and storage
 - Shim only handles runtime-specific logic
 - Less code to maintain, better integration
@@ -290,11 +291,13 @@ type VMConfig struct {
 **Decision**: Pre-warm VMs and maintain a pool of ready-to-use instances.
 
 **Rationale**:
+
 - VM creation is the slowest part (~150ms even with Firecracker)
 - Pool provides O(1) VM acquisition
 - Enables <50ms pod start times
 
 **Implementation**:
+
 ```go
 type Pool struct {
     available chan *Sandbox  // Ready VMs
@@ -315,6 +318,7 @@ func (p *Pool) Acquire(ctx context.Context, config VMConfig) (*Sandbox, error) {
 ```
 
 **Configuration**:
+
 ```toml
 [pool]
 enabled = true
@@ -328,12 +332,14 @@ max_idle_time = "5m"
 **Decision**: Build a custom minimal agent instead of using kata-agent.
 
 **Rationale**:
+
 - kata-agent is ~50MB, ours is ~2-3MB
 - Simple JSON-RPC protocol over vsock
 - Only implements what we need
 - Static binary, no runtime dependencies
 
 **Protocol**:
+
 ```json
 // Request
 {"id": 1, "method": "create_container", "params": {"id": "abc", "bundle": "/..."}}
@@ -343,6 +349,7 @@ max_idle_time = "5m"
 ```
 
 **Supported Methods**:
+
 - `ping` - Health check
 - `create_container` - Create container via runc
 - `start_container` - Start container, return PID
@@ -356,11 +363,13 @@ max_idle_time = "5m"
 **Decision**: Convert OCI images to ext4 block devices.
 
 **Rationale**:
+
 - Firecracker doesn't support filesystem sharing (no 9p, no virtiofs)
 - Block devices (virtio-blk) are fast and simple
 - Sparse files minimize disk usage
 
 **Flow**:
+
 ```
 OCI Image → Pull layers → Flatten → Create ext4 → Attach to VM as /dev/vda
 ```
@@ -372,11 +381,13 @@ OCI Image → Pull layers → Flatten → Create ext4 → Attach to VM as /dev/v
 **Decision**: Build a custom minimal kernel (~5MB uncompressed).
 
 **Rationale**:
+
 - Stock kernels are 30-50MB
 - We only need: virtio, vsock, ext4, cgroups, namespaces, netfilter
 - Faster boot, smaller memory footprint
 
 **Key Config**:
+
 ```
 CONFIG_VIRTIO_MMIO=y      # Firecracker uses MMIO, not PCI
 CONFIG_VIRTIO_BLK=y       # Block devices
@@ -395,42 +406,31 @@ CONFIG_SOUND=n            # Not needed
 
 ## Implementation Status
 
-### Completed ✅
+### Completed Components
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Domain model (`pkg/domain/types.go`) | ✅ Complete | Core entities, value objects, service interfaces |
-| VM Manager (`pkg/vm/manager.go`) | ✅ Complete | Create, stop, destroy VMs using firecracker-go-sdk |
-| VM Pool (`pkg/vm/pool.go`) | ✅ Complete | Pre-warming, acquire/release, auto-replenish |
-| Shim Service (`pkg/shim/service.go`) | ✅ Complete | containerd shim v2 task API implementation |
-| Agent Client (`pkg/agent/client.go`) | ✅ Complete | JSON-RPC client for guest communication |
-| Guest Agent (`cmd/fc-agent/main.go`) | ✅ Complete | vsock server, runc integration |
-| CNI Network (`pkg/network/cni.go`) | ✅ Complete | Network namespace, CNI plugin invocation |
-| Image Service (`pkg/image/rootfs.go`) | ✅ Complete | OCI pull, ext4 conversion |
-| Kernel Config (`kernel/config-minimal`) | ✅ Complete | Minimal kernel for Firecracker |
-| Build System (`Makefile`) | ✅ Complete | Build, install, test targets |
-| Configuration (`config/*.toml`) | ✅ Complete | Runtime and containerd config |
-| K8s Manifests (`deploy/kubernetes/`) | ✅ Complete | RuntimeClass, example pods |
-| Rootfs Script (`scripts/create-rootfs.sh`) | ✅ Complete | Alpine-based base rootfs |
+| Component            | Description                                                              |
+| -------------------- | ------------------------------------------------------------------------ |
+| **Domain Model**     | Core entities, value objects, and service interfaces.                    |
+| **VM Manager**       | Lifecycle management (create, stop, destroy) using firecracker-go-sdk.   |
+| **VM Pool**          | Pre-warming, acquisition, release, and auto-replenishment logic.         |
+| **Shim Service**     | Implementation of containerd shim v2 task API.                           |
+| **Agent Client**     | Host-side JSON-RPC client for guest communication.                       |
+| **Guest Agent**      | Minimal static binary handling vsock communication and runc integration. |
+| **CNI Network**      | Network namespace management and CNI plugin invocation.                  |
+| **Image Service**    | OCI image pull and conversion to ext4 block devices (fsify).             |
+| **Hot-Attach**       | Dynamic attachment of workload rootfs to pooled VMs.                     |
+| **Snapshot Restore** | Fast VM restoration from memory snapshots.                               |
+| **Jailer**           | Production security hardening (chroot, cgroups, seccomp).                |
+| **Metrics**          | Prometheus metrics for pool stats, latencies, and errors.                |
+| **CLI Tool**         | `fcctl` for inspection and debugging.                                    |
 
-### In Progress 🚧
+### Future Work
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Hot-attach drives | 🚧 Planned | Attach workload rootfs to pooled VMs |
-| Exec/Attach streams | 🚧 Planned | Full CRI streaming support |
-| Integration tests | 🚧 Planned | End-to-end testing with containerd |
-
-### Future Work 📋
-
-| Component | Priority | Notes |
-|-----------|----------|-------|
-| Snapshot restore | High | Fast VM restore from memory snapshots |
-| Devmapper backend | High | Efficient thin-provisioned storage |
-| Jailer integration | Medium | Production security hardening |
-| Prometheus metrics | Medium | Observability |
-| ARM64 support | Low | Cross-architecture |
-| GPU passthrough | Low | For ML workloads |
+| Component     | Priority | Notes                                              |
+| ------------- | -------- | -------------------------------------------------- |
+| **Devmapper** | High     | Alternative storage backend for thin provisioning. |
+| **ARM64**     | Medium   | Support for Graviton/Ampere instances.             |
+| **GPU**       | Low      | Passthrough support for ML workloads.              |
 
 ---
 
@@ -595,6 +595,7 @@ chroot_base_dir = "/srv/jailer"
 ```
 
 The jailer provides:
+
 - Chroot isolation for Firecracker process
 - Seccomp filtering
 - Cgroup enforcement
@@ -610,15 +611,15 @@ The jailer provides:
 
 ## Comparison with Alternatives
 
-| Feature | fc-cri | Kata Containers | gVisor |
-|---------|--------|-----------------|--------|
-| Isolation | VM | VM | Syscall filtering |
-| Memory overhead | 64-128MB | 160MB+ | 50-100MB |
-| Cold start | <150ms | 500ms+ | <100ms |
-| Compatibility | High | High | Medium |
-| Hypervisor | Firecracker | Multiple | None |
-| Complexity | Low | High | Medium |
-| Production ready | In progress | Yes | Yes |
+| Feature          | fc-cri      | Kata Containers | gVisor            |
+| ---------------- | ----------- | --------------- | ----------------- |
+| Isolation        | VM          | VM              | Syscall filtering |
+| Memory overhead  | 64-128MB    | 160MB+          | 50-100MB          |
+| Cold start       | <150ms      | 500ms+          | <100ms            |
+| Compatibility    | High        | High            | Medium            |
+| Hypervisor       | Firecracker | Multiple        | None              |
+| Complexity       | Low         | High            | Medium            |
+| Production ready | In progress | Yes             | Yes               |
 
 ---
 
