@@ -6,6 +6,8 @@ repo_name: PipeOpsHQ/firecracker-shim
 
 theme:
   name: material
+  icon:
+    logo: material/server-network
   font:
     text: Inter
     code: JetBrains Mono
@@ -27,7 +29,7 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
-    - navigation.tabs
+    - navigation.expand
     - navigation.sections
     - navigation.top
     - content.code.copy
