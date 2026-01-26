@@ -21,6 +21,30 @@ Kubernetes → kubelet → containerd (CRI) → containerd-shim-fc-v2 → Firecr
 - Containers within the pod share the VM (standard pod networking)
 - VM-level isolation protects host from untrusted workloads
 
+## Why Another Runtime?
+
+If you want stronger isolation than standard Linux containers (cgroups/namespaces), you typically look at two options: **Kata Containers** or **firecracker-containerd**. Both are excellent, but we found them operationally complex for our needs.
+
+### vs. firecracker-containerd
+
+AWS's `firecracker-containerd` pioneered this space, but it uses a **daemon-based architecture** that sits between containerd and the VMs. This adds complexity to debugging, image handling (often requiring custom snapshotters), and networking setup.
+
+**firecracker-shim** takes a different approach:
+
+- **Shim v2 Architecture**: No middleman daemon. containerd talks directly to our shim, which talks directly to Firecracker.
+- **Standard OCI Images**: No complex device mapper setup. We convert standard Docker images to ext4 block devices on the fly.
+- **Standard Networking**: We use standard CNI plugins via a bridge, so your existing Calico/Flannel/AWS-VPC-CNI just works.
+
+### vs. Kata Containers
+
+Kata is a powerful, multi-hypervisor runtime (QEMU, Cloud Hypervisor, Firecracker, etc.). That flexibility comes with abstraction overhead (~160MB+ memory per pod vs our ~64MB) and a larger architectural footprint.
+
+We built **firecracker-shim** to be:
+
+1.  **Single-purpose**: Optimized solely for Firecracker.
+2.  **Lean**: Minimal agent (~2MB), minimal kernel, minimal overhead.
+3.  **Fast**: Sub-50ms warm starts via VM pooling.
+
 ## Architecture
 
 ```

@@ -1,17 +1,32 @@
-# Introducing firecracker-shim: Kubernetes-native Firecracker, Simplified
+# Introducing firecracker-shim: Firecracker for Kubernetes, Simplified
 
 Today we're releasing **firecracker-shim** (fc-cri), a lightweight container runtime that brings Firecracker microVM isolation to Kubernetes without the complexity of existing solutions.
 
-## The Problem: "Secure" Containers Are Hard
+## Why Another Runtime?
 
-If you want stronger isolation than standard Linux containers (cgroups/namespaces), you typically have two choices:
+If you want stronger isolation than standard Linux containers (cgroups/namespaces), you typically look at two options: **Kata Containers** or **firecracker-containerd**. Both are excellent, but we found them operationally complex for our needs.
 
-1. **Kata Containers**: Powerful, enterprise-ready, but heavy. It supports QEMU, Cloud Hypervisor, Firecracker, and more—but that flexibility brings significant architectural complexity and operational overhead (160MB+ memory per pod).
-2. **Firecracker directly**: Lean and fast, but hard to integrate. You have to build your own orchestration, networking, and image handling.
+### vs. firecracker-containerd
 
-We wanted the **leanness of Firecracker** with the **simplicity of a standard runc-like shim**.
+AWS's `firecracker-containerd` pioneered this space, but it uses a **daemon-based architecture** that sits between containerd and the VMs. This adds complexity to debugging, image handling (often requiring custom snapshotters), and networking setup.
 
-## What We Built
+**firecracker-shim** takes a different approach:
+
+- **Shim v2 Architecture**: No middleman daemon. containerd talks directly to our shim, which talks directly to Firecracker.
+- **Standard OCI Images**: No complex device mapper setup. We convert standard Docker images to ext4 block devices on the fly.
+- **Standard Networking**: We use standard CNI plugins via a bridge, so your existing Calico/Flannel/AWS-VPC-CNI just works.
+
+### vs. Kata Containers
+
+Kata is a powerful, multi-hypervisor runtime (QEMU, Cloud Hypervisor, etc.). That flexibility comes with abstraction overhead (~160MB+ memory per pod vs our ~64MB) and a larger architectural footprint.
+
+We built **firecracker-shim** to be:
+
+1.  **Single-purpose**: Optimized solely for Firecracker.
+2.  **Lean**: Minimal agent (~2MB), minimal kernel, minimal overhead.
+3.  **Fast**: Sub-50ms warm starts via VM pooling.
+
+## Architecture
 
 **firecracker-shim** is a purpose-built containerd shim (v2) that maps Kubernetes Pods 1:1 to Firecracker microVMs.
 
