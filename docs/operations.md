@@ -19,7 +19,7 @@ The runtime operates as a containerd shim (`io.containerd.firecracker.v2`). When
 - **OS**: Linux (kernel 4.14+)
 - **Virtualization**: KVM enabled (`/dev/kvm` accessible)
 - **vsock**: `vhost_vsock` kernel module loaded
-- **containerd**: Version 1.6+
+- **containerd**: Version 1.7+
 - **CNI Plugins**: Standard plugins installed (`bridge`, `ptp`, `host-local`, etc.)
 
 ### Sizing Recommendations

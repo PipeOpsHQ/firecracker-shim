@@ -57,7 +57,7 @@ AWS built `firecracker-containerd` with a focus on extreme density (thousands of
   ```
   You can identify, trace, or kill individual pods using standard Linux tools (`ps`, `top`, `kill`).
 - **Simplicity**: We replaced complex device mapper requirements with simple file-backed images (`.ext4`). This allows the runtime to work on any Linux machine without specialized storage configuration.
-- **Compatibility**: Because we implement the standard Shim v2 API, we work with unmodified, upstream `containerd` (v1.6+). No need to replace your existing container runtime binaries.
+- **Compatibility**: Because we implement the standard Shim v2 API, we work with unmodified, upstream `containerd` (v1.7+). No need to replace your existing container runtime binaries.
 
 ### The Drawbacks
 

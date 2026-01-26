@@ -83,7 +83,7 @@ You can try it today on any Linux machine with KVM support.
 1. **Install**:
 
    ```bash
-   git clone https://github.com/pipeops/firecracker-cri
+   git clone https://github.com/PipeOpsHQ/firecracker-shim
    make install
    ```
 
@@ -110,4 +110,4 @@ Our roadmap for v0.2 includes:
 - **Multi-arch Support**: ARM64 builds for running on Graviton/Ampere.
 - **Conformance**: Passing 100% of the Kubernetes e2e suite.
 
-Check out the code on [GitHub](https://github.com/pipeops/firecracker-cri) and let us know what you think!
+Check out the code on [GitHub](https://github.com/PipeOpsHQ/firecracker-shim) and let us know what you think!

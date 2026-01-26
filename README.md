@@ -129,8 +129,8 @@ containerd --version
 
 ```bash
 # Clone
-git clone https://github.com/pipeops/firecracker-cri
-cd firecracker-cri
+git clone https://github.com/PipeOpsHQ/firecracker-shim
+cd firecracker-shim
 
 # Install dependencies (fsify, skopeo, umoci)
 make deps

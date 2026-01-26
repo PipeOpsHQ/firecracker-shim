@@ -17,7 +17,7 @@ Before installing, ensure your environment meets the following requirements:
 ### Software
 
 - **OS**: Linux (Kernel 4.14+, recommended 5.10+)
-- **Container Runtime**: `containerd` 1.6+
+- **Container Runtime**: `containerd` 1.7+
 - **Kubernetes**: 1.24+ (if using with K8s)
 
 ---
