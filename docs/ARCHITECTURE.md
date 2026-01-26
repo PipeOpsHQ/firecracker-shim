@@ -386,6 +386,11 @@ OCI Image → Pull layers → Flatten → Create ext4 → Attach to VM as /dev/v
 - We only need: virtio, vsock, ext4, cgroups, namespaces, netfilter
 - Faster boot, smaller memory footprint
 
+**Trade-offs**:
+
+- **Reduced Compatibility**: Missing drivers for XFS, ZFS, SCTP, and specialized hardware.
+- **Mitigation**: Users can supply their own kernel via `config.toml` (see Operations Guide).
+
 **Key Config**:
 
 ```
