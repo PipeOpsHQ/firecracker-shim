@@ -1,4 +1,4 @@
-# firecracker-shim
+# Firecracker Shim
 
 A **containerd runtime (shim v2)** that runs Kubernetes pod sandboxes inside Firecracker microVMs.
 
