@@ -32,6 +32,7 @@ nav:
   - Installation: installation.md
   - Operations Guide: operations.md
   - Architecture: ARCHITECTURE.md
+  - Comparison: comparison.md
   - Launch Post: launch-post.md
 
 markdown_extensions:

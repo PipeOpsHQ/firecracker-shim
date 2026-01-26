@@ -35,6 +35,8 @@ AWS's `firecracker-containerd` pioneered this space, but it uses a **daemon-base
 - **Standard OCI Images**: No complex device mapper setup. We convert standard Docker images to ext4 block devices on the fly.
 - **Standard Networking**: We use standard CNI plugins via a bridge, so your existing Calico/Flannel/AWS-VPC-CNI just works.
 
+[See full comparison: Daemon vs Shim Architecture](docs/comparison.md)
+
 ### vs. Kata Containers
 
 Kata is a powerful, multi-hypervisor runtime (QEMU, Cloud Hypervisor, Firecracker, etc.). That flexibility comes with abstraction overhead (~160MB+ memory per pod vs our ~64MB) and a larger architectural footprint.
