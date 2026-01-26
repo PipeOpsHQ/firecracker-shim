@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'README.md'
-      - '.github/workflows/docs.yaml'
+      - "docs/**"
+      - "mkdocs.yml"
+      - "README.md"
+      - ".github/workflows/docs.yaml"
 
 permissions:
   contents: write
@@ -32,6 +32,9 @@ jobs:
       - name: Install MkDocs and Material Theme
         run: |
           pip install mkdocs-material
+
+      - name: Sync README to docs/index.md
+        run: cp README.md docs/index.md
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force

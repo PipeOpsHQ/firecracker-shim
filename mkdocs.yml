@@ -1,6 +1,6 @@
 site_name: firecracker-shim
 site_description: Kubernetes-native Firecracker runtime
-site_url: https://pipeops.github.io/firecracker-shim/
+site_url: https://PipeOpsHQ.github.io/firecracker-shim/
 repo_url: https://github.com/PipeOpsHQ/firecracker-shim
 repo_name: PipeOpsHQ/firecracker-shim
 
