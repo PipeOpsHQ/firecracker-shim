@@ -44,6 +44,7 @@ nav:
   - Security & Trust: security.md
   - Compatibility: compatibility.md
   - Comparison: comparison.md
+  - FAQ: faq.md
   - Launch Post: launch-post.md
 
 markdown_extensions:
