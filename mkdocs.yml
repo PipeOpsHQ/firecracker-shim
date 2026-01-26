@@ -4,6 +4,8 @@ site_url: https://pipeopshq.github.io/firecracker-shim/
 repo_url: https://github.com/PipeOpsHQ/firecracker-shim
 repo_name: PipeOpsHQ/firecracker-shim
 
+docs_dir: docs
+
 theme:
   name: material
   icon:
@@ -12,13 +14,6 @@ theme:
     text: Inter
     code: JetBrains Mono
   palette:
-    # Dark mode
-    - scheme: slate
-      primary: violet
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
     # Light mode
     - scheme: default
       primary: violet
@@ -26,6 +21,13 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: violet
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
     - navigation.instant
     - navigation.tracking
