@@ -270,6 +270,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-installer
           tags: |
             type=ref,event=branch
+            type=raw,value=v0.1.${{ github.run_number }},enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
