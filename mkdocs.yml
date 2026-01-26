@@ -41,6 +41,8 @@ nav:
   - Operations Guide: operations.md
   - Image Handling: image-handling.md
   - Architecture: ARCHITECTURE.md
+  - Security & Trust: security.md
+  - Compatibility: compatibility.md
   - Comparison: comparison.md
   - Launch Post: launch-post.md
 
