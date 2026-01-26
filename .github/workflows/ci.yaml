@@ -194,10 +194,21 @@ jobs:
           sudo cp dist/binaries/fcctl /usr/local/bin/
           sudo chmod +x /usr/local/bin/containerd-shim-fc-v2 /usr/local/bin/fc-agent /usr/local/bin/fcctl
 
+      - name: Setup Kernel and Rootfs
+        run: |
+          sudo mkdir -p /var/lib/fc-cri/rootfs
+          curl -sL https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/kernels/vmlinux-5.10.186 -o vmlinux
+          curl -sL https://s3.amazonaws.com/spec.ccfc.min/img/quickstart_guide/x86_64/rootfs/bionic.rootfs.ext4 -o rootfs.ext4
+          sudo mv vmlinux /var/lib/fc-cri/vmlinux
+          sudo mv rootfs.ext4 /var/lib/fc-cri/rootfs/base.ext4
+
       - name: Run integration tests
         run: |
           sudo chmod +x scripts/integration-test.sh
-          sudo ./scripts/integration-test.sh -v || true
+          # Set paths to where we installed binaries
+          export SHIM_BINARY=/usr/local/bin/containerd-shim-fc-v2
+          export AGENT_BINARY=/usr/local/bin/fc-agent
+          sudo -E ./scripts/integration-test.sh -v || true
         continue-on-error: true
 
   publish-installer:
