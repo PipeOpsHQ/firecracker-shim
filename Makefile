@@ -147,6 +147,20 @@ proto:
 	@echo "Generating protobuf code..."
 	protoc --go_out=. --go-grpc_out=. api/agent.proto
 
+# Build documentation site
+site:
+	@echo "Building documentation site..."
+	pip install mkdocs-material
+	cp README.md docs/index.md
+	mkdocs build
+
+# Serve documentation site locally
+site-serve:
+	@echo "Serving documentation site..."
+	pip install mkdocs-material
+	cp README.md docs/index.md
+	mkdocs serve
+
 # Show help
 help:
 	@echo "fc-cri Makefile"
@@ -170,5 +184,7 @@ help:
 	@echo "  lint           - Run linter"
 	@echo "  fmt            - Format code"
 	@echo "  clean          - Remove build artifacts"
+	@echo "  site           - Build documentation site"
+	@echo "  site-serve     - Serve documentation site locally"
 	@echo "  dev-install    - Quick install for development"
 	@echo "  help           - Show this help"
