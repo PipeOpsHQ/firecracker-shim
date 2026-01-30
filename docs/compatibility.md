@@ -41,3 +41,23 @@ The guest kernel running inside the microVM must support virtio drivers.
 | **AMD64 (x86_64)**  | [Stable]   | Primary development platform.                            |
 | **ARM64 (aarch64)** | [Planned]  | Requires different kernel/rootfs and Firecracker binary. |
 | **PVM (x86_64)**    | [Research] | Software-based virtualization. No nested virt required.  |
+
+## PVM (Experimental)
+
+Pagetable-based Virtual Machine (PVM) is a software-based virtualization framework that enables running secure containers without hardware-assisted nested virtualization.
+
+### Requirements
+
+| Requirement      | Details                                                      |
+| :--------------- | :----------------------------------------------------------- |
+| **Host Kernel**  | Linux 6.7+ with PVM RFC patchset (provides `kvm-pvm.ko`).    |
+| **Guest Kernel** | Must be compiled as a Position-Independent Executable (PIE). |
+| **Guest Mode**   | Runs in hardware Ring 3 (user mode).                         |
+| **Hardware**     | x86_64 CPU with support for Shadow Paging and PCID.          |
+
+### Limitations
+
+- **MMU Performance**: Uses Shadow Paging instead of EPT/NPT, causing overhead for frequent page table changes (e.g., `fork()`).
+- **Kernel Features**: No support for LDT (Local Descriptor Table).
+- **Security Emulation**: SMAP/SMEP must be emulated using Memory Protection Keys (PKU) and NX bits.
+- **CPU Features**: PMU (Performance Monitoring Unit) virtualization is limited/not fully implemented.

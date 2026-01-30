@@ -67,7 +67,19 @@ Firecracker supports ARM64, and our architecture supports it. We plan to add ARM
 
 - **Why it matters**: Currently, running Firecracker inside a cloud VM requires **Nested Virtualization**. Many cloud providers disable this or only offer it on expensive Bare Metal instances.
 - **How it works**: PVM decouples the secure container from hardware virtualization requirements by using a modified host kernel and a Position-Independent Executable (PIE) guest kernel.
-- **Status in firecracker-shim**: Researching. Implementing PVM would enable our shim to run on any standard cloud instance, significantly reducing infrastructure costs, but it requires a custom-patched host kernel.
+- **Status in firecracker-shim**: Researching. Implementing PVM would enable our shim to run on any standard cloud instance, significantly reducing infrastructure costs.
+
+#### Requirements for PVM
+
+- **Patched Host Kernel**: The host must run a Linux kernel with the PVM RFC patchset (introducing the `kvm-pvm` vendor module).
+- **PIE Guest Kernel**: The guest OS must use a Position-Independent Executable (PIE) kernel that supports running in hardware Ring 3.
+- **x86_64 Architecture**: Current PVM research is specific to x86_64 and requires Shadow Paging.
+
+#### Known Limitations
+
+- **Performance Overhead**: PVM relies on **Shadow Paging**, which can lead to performance degradation in workloads that frequently modify page tables (e.g., high process fork rates). Long-running services like Java apps typically perform well.
+- **Feature Gaps**: Direct SMAP/SMEP is not supported (requires emulation via PKU/NX). LDT and full PMU virtualization are currently not implemented in the initial PVM specifications.
+- **Instruction Emulation**: Certain privileged instructions must be emulated in software since the guest runs in hardware Ring 3.
 
 ---
 
