@@ -36,7 +36,8 @@ The guest kernel running inside the microVM must support virtio drivers.
 
 ## Architecture
 
-| Arch                | Status    | Notes                                                    |
-| :------------------ | :-------- | :------------------------------------------------------- |
-| **AMD64 (x86_64)**  | [Stable]  | Primary development platform.                            |
-| **ARM64 (aarch64)** | [Planned] | Requires different kernel/rootfs and Firecracker binary. |
+| Arch                | Status     | Notes                                                    |
+| :------------------ | :--------- | :------------------------------------------------------- |
+| **AMD64 (x86_64)**  | [Stable]   | Primary development platform.                            |
+| **ARM64 (aarch64)** | [Planned]  | Requires different kernel/rootfs and Firecracker binary. |
+| **PVM (x86_64)**    | [Research] | Software-based virtualization. No nested virt required.  |

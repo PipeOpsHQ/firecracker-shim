@@ -431,11 +431,12 @@ CONFIG_SOUND=n            # Not needed
 
 ### Future Work
 
-| Component     | Priority | Notes                                              |
-| ------------- | -------- | -------------------------------------------------- |
-| **Devmapper** | High     | Alternative storage backend for thin provisioning. |
-| **ARM64**     | Medium   | Support for Graviton/Ampere instances.             |
-| **GPU**       | Low      | Passthrough support for ML workloads.              |
+| Component     | Priority | Notes                                                                                          |
+| ------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| **Devmapper** | High     | Alternative storage backend for thin provisioning.                                             |
+| **ARM64**     | Medium   | Support for Graviton/Ampere instances.                                                         |
+| **GPU**       | Low      | Passthrough support for ML workloads.                                                          |
+| **PVM**       | Low      | Pagetable-based Virtual Machine (Research). Support for running without nested virtualization. |
 
 ---
 

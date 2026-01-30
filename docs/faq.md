@@ -61,6 +61,14 @@ Firecracker's design philosophy prioritizes security and minimalism, so PCI pass
 **Planned.**
 Firecracker supports ARM64, and our architecture supports it. We plan to add ARM64 build targets in the v0.2 roadmap.
 
+### What is PVM (Pagetable-based Virtual Machine)?
+
+**PVM** is an emerging virtualization framework that allows running secure containers (like Firecracker) without hardware-assisted nested virtualization.
+
+- **Why it matters**: Currently, running Firecracker inside a cloud VM requires **Nested Virtualization**. Many cloud providers disable this or only offer it on expensive Bare Metal instances.
+- **How it works**: PVM decouples the secure container from hardware virtualization requirements by using a modified host kernel and a Position-Independent Executable (PIE) guest kernel.
+- **Status in firecracker-shim**: Researching. Implementing PVM would enable our shim to run on any standard cloud instance, significantly reducing infrastructure costs, but it requires a custom-patched host kernel.
+
 ---
 
 ## Operations

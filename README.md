@@ -555,6 +555,7 @@ sudo ./scripts/integration-test.sh -t kernel_boot
 - [x] Snapshot support (optional)
 - [ ] Multi-arch (arm64)
 - [ ] Conformance tests
+- [ ] PVM support (Pagetable-based VM research)
 
 ## Contributing
 
