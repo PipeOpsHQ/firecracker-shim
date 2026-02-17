@@ -16,6 +16,14 @@ SHIM_BINARY := $(BINARY_DIR)/containerd-shim-fc-v2
 AGENT_BINARY := $(BINARY_DIR)/fc-agent
 FCCTL_BINARY := $(BINARY_DIR)/fcctl
 
+# Detect package manager
+PKG_MANAGER := $(shell \
+	if command -v pacman > /dev/null 2>&1; then echo "pacman"; \
+	elif command -v apt-get > /dev/null 2>&1; then echo "apt"; \
+	elif command -v dnf > /dev/null 2>&1; then echo "dnf"; \
+	elif command -v brew > /dev/null 2>&1; then echo "brew"; \
+	else echo "unknown"; fi)
+
 .PHONY: all build shim agent fcctl install clean test lint proto deps fsify
 
 all: build
@@ -42,10 +50,56 @@ fcctl:
 
 # Install dependencies (fsify, skopeo, umoci)
 deps:
+	@echo "Detected package manager: $(PKG_MANAGER)"
 	@echo "Installing dependencies..."
-	@which skopeo > /dev/null || (echo "Installing skopeo..." && sudo apt-get install -y skopeo || brew install skopeo)
-	@which umoci > /dev/null || (echo "Installing umoci..." && sudo apt-get install -y umoci || GO111MODULE=on go install github.com/opencontainers/umoci/cmd/umoci@latest)
-	@which fsify > /dev/null || $(MAKE) fsify
+	@# --- skopeo ---
+	@which skopeo > /dev/null 2>&1 || ( \
+		echo "Installing skopeo..." && \
+		if [ "$(PKG_MANAGER)" = "pacman" ]; then sudo pacman -S --noconfirm skopeo; \
+		elif [ "$(PKG_MANAGER)" = "apt" ]; then sudo apt-get install -y skopeo; \
+		elif [ "$(PKG_MANAGER)" = "dnf" ]; then sudo dnf install -y skopeo; \
+		elif [ "$(PKG_MANAGER)" = "brew" ]; then brew install skopeo; \
+		else echo "ERROR: Could not detect package manager. Install skopeo manually." && exit 1; fi \
+	)
+	@# --- umoci ---
+	@which umoci > /dev/null 2>&1 || ( \
+		echo "Installing umoci..." && \
+		if [ "$(PKG_MANAGER)" = "pacman" ]; then \
+			echo "umoci not in official repos, installing from AUR or Go..." && \
+			if command -v yay > /dev/null 2>&1; then yay -S --noconfirm umoci; \
+			elif command -v paru > /dev/null 2>&1; then paru -S --noconfirm umoci; \
+			else GO111MODULE=on go install github.com/opencontainers/umoci/cmd/umoci@latest; fi; \
+		elif [ "$(PKG_MANAGER)" = "apt" ]; then sudo apt-get install -y umoci; \
+		elif [ "$(PKG_MANAGER)" = "dnf" ]; then sudo dnf install -y umoci; \
+		elif [ "$(PKG_MANAGER)" = "brew" ]; then GO111MODULE=on go install github.com/opencontainers/umoci/cmd/umoci@latest; \
+		else GO111MODULE=on go install github.com/opencontainers/umoci/cmd/umoci@latest; fi \
+	)
+	@# --- containerd ---
+	@which containerd > /dev/null 2>&1 || ( \
+		echo "Installing containerd..." && \
+		if [ "$(PKG_MANAGER)" = "pacman" ]; then sudo pacman -S --noconfirm containerd; \
+		elif [ "$(PKG_MANAGER)" = "apt" ]; then sudo apt-get install -y containerd; \
+		elif [ "$(PKG_MANAGER)" = "dnf" ]; then sudo dnf install -y containerd; \
+		else echo "ERROR: Install containerd manually." && exit 1; fi \
+	)
+	@# --- runc ---
+	@which runc > /dev/null 2>&1 || ( \
+		echo "Installing runc..." && \
+		if [ "$(PKG_MANAGER)" = "pacman" ]; then sudo pacman -S --noconfirm runc; \
+		elif [ "$(PKG_MANAGER)" = "apt" ]; then sudo apt-get install -y runc; \
+		elif [ "$(PKG_MANAGER)" = "dnf" ]; then sudo dnf install -y runc; \
+		else echo "ERROR: Install runc manually." && exit 1; fi \
+	)
+	@# --- CNI plugins ---
+	@test -d /opt/cni/bin/ || ( \
+		echo "Installing CNI plugins..." && \
+		if [ "$(PKG_MANAGER)" = "pacman" ]; then sudo pacman -S --noconfirm cni-plugins; \
+		elif [ "$(PKG_MANAGER)" = "apt" ]; then sudo apt-get install -y containernetworking-plugins; \
+		elif [ "$(PKG_MANAGER)" = "dnf" ]; then sudo dnf install -y containernetworking-plugins; \
+		else echo "ERROR: Install CNI plugins manually." && exit 1; fi \
+	)
+	@# --- fsify ---
+	@which fsify > /dev/null 2>&1 || $(MAKE) fsify
 	@echo "Dependencies installed!"
 
 # Install fsify for OCI to block device conversion
